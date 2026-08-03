@@ -1,0 +1,43 @@
+# MCP server registry - what exists, what it costs, and when to turn it on.
+#
+# WHY THIS FILE EXISTS
+# Tool definitions are re-sent to the model on EVERY turn of EVERY conversation.
+# A database server and a ticketing server sitting idle in the tool list are a
+# recurring tax, paid whether or not anything uses them - and on a long session
+# that tax routinely exceeds the cost of the actual work.
+#
+# So: enable per TASK, not per project. Every recipe in context/recipes/ names
+# the servers it needs. Where a script does the job, prefer the script: a
+# script costs nothing until it is called.
+#
+# tool_count is the number that matters. Budget roughly 40-60 tokens per tool
+# definition, per turn.
+
+servers: []
+
+# ============================================================================
+# REFERENCE - copy what applies. Delete what does not.
+# ============================================================================
+#
+# - name: postgres-analytics
+#   purpose: read-only queries against the warehouse
+#   enable_for: [data-questions, reporting]
+#   tool_count: 4                    # ~800-1000 tok per turn
+#   cheaper_alternative: scripts/query.py
+#   notes: analyst_ro role, 10s statement timeout, no DDL
+#
+# - name: jira
+#   purpose: ticket lookup and status
+#   enable_for: [planning, standup-prep]
+#   tool_count: 22                   # expensive - enable only when needed
+#   cheaper_alternative: none
+#
+# - name: confluence
+#   purpose: reading the project wiki
+#   enable_for: []                   # deliberately empty - see notes
+#   tool_count: 14
+#   cheaper_alternative: map/<system>/CARD.md
+#   notes: not wired in on purpose: for systems this old the documentation
+#     lies, and a card that says LOW confidence is more useful than a wiki
+#     page that says nothing about its own staleness. This row is a decision,
+#     not an oversight.

@@ -1,0 +1,29 @@
+# Working checkout of the legacy estate.
+# Reproducible from project.yaml via scripts/sync.py. Never committed.
+systems/
+
+# Secrets. .env.example is committed; .env never is.
+.env
+*.env
+!.env.example
+
+# Raw secret-scan output quotes matched lines verbatim. Only the fingerprint
+# baseline (.secrets-baseline) is safe to commit.
+.secrets-baseline.raw.json
+
+# Raw captured traffic is REAL production data - auth headers are redacted but
+# bodies are not, because the body is the payload you needed. Only the reduced
+# contract and the golden-master fixtures are safe to commit.
+integration/fixtures/**/raw/
+**/derived/**/*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+

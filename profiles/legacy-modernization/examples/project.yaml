@@ -1,0 +1,96 @@
+# EXAMPLE project.yaml - the three shapes of area, live.
+#
+# A reference, not a working file. The cards that go with the two surveyed
+# areas are in examples/billing-legacy/ and examples/orders-forms-legacy/.
+
+project: acme-modernization
+profile: legacy-modernization
+
+commands:
+  test: python scripts/test_golden.py
+
+defaults:
+  access: read-only
+  survey: false
+
+areas:
+
+  # --- kind: repo ------------------------------------------------------------
+  # Source in git, an HTTP boundary you can record, a database you can read.
+  # The easy case, and the one the playbook is written around.
+  - name: billing-legacy
+    kind: repo
+    url: git@github.com:acme/billing-legacy.git
+    ref: release/2024.3
+    access: read-only
+    survey: true
+    owner: billing-team
+    stack:
+      language: java8
+      framework: spring3.2
+      database: oracle11g
+      runtime: weblogic
+    adapters:
+      db: oracle
+      # SOAP is HTTP POST, so the shipped REST recorder captures it unchanged.
+      capture: rest
+      # Replay is the part that needs writing: comparing SOAP responses needs
+      # XML-aware diffing, so this is honestly a stub until someone writes it.
+      test: _stub
+    sparse:
+      - src/main/java/com/acme/billing/invoice/**
+      - src/main/resources/*.xml
+    exclude_from_search:
+      - "**/generated/**"
+      - "**/vendor/**"
+      - "**/*.min.js"
+      - "src/legacy/report/**"
+
+  # --- kind: database --------------------------------------------------------
+  # Business logic in PL/SQL packages and triggers. Nothing to clone and no
+  # branch to pin, but the logic is real and it needs a card. snapshot_db.py
+  # extracts it into map/core-plsql/.
+  - name: core-plsql
+    kind: database
+    access: read-only
+    survey: true
+    owner: dba-team
+    stack:
+      database: oracle11g
+    adapters:
+      db: oracle
+    schema_owners: [BILL01, CORE]
+
+  # --- binary sources + no observable boundary -------------------------------
+  # Oracle Forms. The .fmb files are binary, so grep finds nothing in them; the
+  # derive: block converts them to XML once, into map/<name>/derived/, and that
+  # is what gets searched. There is no HTTP seam to record, so the capture and
+  # test adapters are declared 'none' on purpose.
+  - name: orders-forms-legacy
+    kind: repo
+    url: git@github.com:acme/orders-forms.git
+    ref: v6.2.1
+    access: read-only
+    survey: true
+    owner: orders-team
+    stack:
+      language: oracle-forms-6i
+      database: oracle11g
+    adapters:
+      db: oracle
+      capture: none
+      test: none
+    sparse:
+      - forms/**
+      - reports/**
+      - plsql/**
+    derive:
+      - tool: Forms2XML
+        from: "forms/**/*.fmb"
+        to: "derived/forms-xml/"
+      - tool: rwconverter
+        from: "reports/**/*.rdf"
+        to: "derived/reports-xml/"
+    exclude_from_search:
+      - "**/*.fmx"
+      - "**/*.rep"

@@ -1,0 +1,88 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./.secrets-baseline.raw.json)",
+      "Read(./integration/fixtures/**/raw/**)",
+      "Write(./systems/**)",
+      "Edit(./systems/**)",
+      "Write(./map/**/schema.sql)",
+      "Edit(./map/**/schema.sql)",
+      "Write(./map/**/erd.mmd)",
+      "Edit(./map/**/erd.mmd)",
+      "Write(./map/**/derived/**)",
+      "Edit(./map/**/derived/**)",
+      "Write(./integration/fixtures/**/raw/**)",
+      "Edit(./integration/fixtures/**/raw/**)",
+      "Write(./.rgignore)",
+      "Edit(./.rgignore)"
+    ],
+    "allow": [
+      "Bash(python scripts/check.py:*)",
+      "Bash(python scripts/status.py:*)",
+      "Bash(python scripts/usage.py:*)",
+      "Bash(python scripts/sync.py:*)",
+      "Bash(python scripts/scan.py:*)",
+      "Bash(python scripts/new_card.py:*)",
+      "Bash(python scripts/handoff.py:*)",
+      "Bash(python scripts/snapshot_db.py:*)",
+      "Bash(python scripts/query.py:*)",
+      "Bash(python scripts/capture.py:*)",
+      "Bash(python scripts/test_golden.py:*)",
+      "Bash(python tests/invariants.py:*)",
+      "Bash(rg:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|NotebookRead|Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

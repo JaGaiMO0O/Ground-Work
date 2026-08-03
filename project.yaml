@@ -1,0 +1,93 @@
+# project.yaml - what this project is made of.
+#
+# Single source of truth for: what exists, who owns it, what may be searched,
+# and how to build and test it. Nothing about an area is described anywhere
+# else - one canonical location per fact.
+#
+#   scripts/check.py    validates this file and everything it declares
+#   scripts/sync.py     regenerates .rgignore; checks out any `kind: repo` areas
+#   scripts/status.py   reads it to report where the project stands
+#
+# Field reference is the commented block at the foot of this file.
+
+project: <PROJECT_NAME>
+
+# Which profile's extra artifacts and rules apply. `general` is right for
+# almost everything. See profiles/ for what each one adds.
+profile: general
+
+# How to build, test, lint and run this project. RUNBOOK.md explains them for
+# humans; this is the machine-readable list, so check.py can verify the runbook
+# has not drifted from reality. Reproducibility starts here.
+commands:
+
+defaults:
+  access: read-only
+  survey: false
+
+# The parts of the work, each with a card in map/<name>/CARD.md.
+areas: []
+
+# ============================================================================
+# REFERENCE - copy what fits into `areas:` above.
+# ============================================================================
+#
+# --- kind: local (the default) - a part of THIS repository ------------------
+#
+# - name: api
+#   kind: local
+#   paths:                   # which files belong to this area
+#     - src/api/**
+#     - tests/api/**
+#   owner: platform-team     # who to ask. Saves a round trip later.
+#   survey: true             # true -> check.py requires map/api/CARD.md
+#   exclude_from_search:     # mirrored into .rgignore by sync.py
+#     - "**/__snapshots__/**"
+#     - "**/*.generated.ts"
+#
+# --- commands: ---------------------------------------------------------------
+#
+# commands:
+#   install: npm ci
+#   test:    npm test
+#   lint:    npm run lint
+#   build:   npm run build
+#   run:     npm run dev
+#
+# --- kind: repo - an EXTERNAL repository, checked out into systems/ ---------
+# For work spanning repositories you do not own. Read-only and pinned.
+#
+# - name: partner-api
+#   kind: repo
+#   url: git@github.com:example/partner-api.git
+#   ref: v2.4.0              # PIN THIS. A moving branch makes the card fiction.
+#   access: read-only
+#   survey: true
+#   sparse:                  # only these paths ever land on disk
+#     - src/main/**
+#   exclude_from_search:
+#     - "**/generated/**"
+#
+# --- kind: database - logic with no repository at all ----------------------
+# Stored procedures, triggers, scheduled jobs. Nothing to clone, but the logic
+# is real and it needs a card. snapshot_db.py extracts it into map/<name>/.
+#
+# - name: reporting-db
+#   kind: database
+#   survey: true
+#   adapters:
+#     db: postgres
+#   schema_owners: [analytics]
+#
+# --- adapters: --------------------------------------------------------------
+# Anything that touches a live external system goes through an adapter you own.
+# See docs/adapters.md. Families: db, capture, test.
+#
+# --- derive: - make binary sources greppable -------------------------------
+# grep returns nothing on a binary, which is indistinguishable from an empty
+# area. Convert once into map/<name>/derived/ and search that instead.
+#
+#   derive:
+#     - tool: Forms2XML
+#       from: "forms/**/*.fmb"
+#       to: "derived/forms-xml/"
