@@ -1,85 +1,135 @@
 # Runbook
 
-**The one place that says how to build, test and run this project.** If the
-answer lives in someone's shell history, it lives here instead.
+**The one place that says how to build, test and run this project.**
 
-Every command declared in `project.yaml` under `commands:` must appear here with
-an explanation. `check.py` fails if one is missing - that is what stops this file
-drifting into fiction.
+This repo is a template: there is nothing to compile and nothing to deploy. "Run
+it" means run its own tooling against itself, which is also how you know a change
+did not break anything.
+
+Every command in `project.yaml` under `commands:` appears here. `check.py` fails
+if one is missing - that is what stops this file drifting into fiction.
 
 ---
 
 ## Setup
 
-What a person needs before anything works: language version, package manager,
-services, credentials. Be specific about versions - "Node 20.11" not "recent
-Node".
+You need **Python 3.8+** and **git**. That is the whole hard requirement.
 
 ```bash
-# install
+python --version
 ```
+
+Optional, and everything degrades cleanly without them:
+
+| Tool | Used for | Without it |
+|---|---|---|
+| **PyYAML** | parsing `project.yaml` | falls back to the bundled subset parser in `scripts/_minyaml.py` |
+| **gitleaks** or **trufflehog** | `scan.py`, including git history | falls back to a bundled regex scan of the working tree, and says so loudly |
+| **ripgrep** (`rg`) | fast search honouring `.rgignore` | use `grep`; the exclusions still apply to anything that reads `.rgignore` |
+| **bash** | the `.sh` adapters and shims | use the `.py` scripts directly, or the `.ps1` shims on Windows |
+
+```bash
+pip install pyyaml
+```
+
+No virtualenv, no lockfile, no install step. That is deliberate: this has to drop
+into somebody else's repo without bringing dependencies with it.
+
+## Check
+
+Validates every invariant. **Run this before finishing anything.**
+
+```bash
+python scripts/check.py
+```
+
+Exit `0` clean, `1` errors, `2` warnings only. On a fresh clone before `init.py`,
+expect exit 2 with one warning about the `<date>` placeholder in `STATUS.md` -
+that is correct; `init.py` fills it.
 
 ## Test
 
+The invariant suite. Copies the repo to a temp directory 35 times, breaks one
+rule in each copy, and asserts `check.py` notices. Takes about 45 seconds.
+
 ```bash
-# test
+python tests/invariants.py
 ```
 
-How long it takes, and what a normal failure looks like. If some tests need a
-database or network, say which and how to skip them.
-
-## Run
+The guard suite. Fires every hook decision and asserts blocks block and nothing
+else does. A couple of seconds.
 
 ```bash
-# run
+python tests/hooks.py
 ```
 
-Where it listens, what it needs running alongside it, and how to tell it started
-correctly.
+Both must be green before a commit. A failure in `tests/invariants.py` usually
+means a rule changed without its test, or a rename missed a path.
 
-## Build
+Useful while working on one rule:
 
 ```bash
-# build
+python tests/invariants.py --only legacy
 ```
 
-## Lint / format
+## Usage
+
+Reads the local Claude Code session transcripts and reports where context went.
+Advisory; safe to run anywhere.
 
 ```bash
-# lint
+python scripts/usage.py
+```
+
+Nothing depends on it. If it reports "no readable session telemetry", that is the
+expected answer on a machine with no history for this project - not a failure.
+
+## Try it end to end
+
+The fastest way to confirm a change is sound is to use the template as a user
+would, on a copy:
+
+```bash
+cp -r . /tmp/gw-trial && cd /tmp/gw-trial && rm -rf .git && python scripts/init.py --project trial --profile general --purpose "trying it" --done "tried it"
+```
+
+Then `python scripts/check.py` in that copy should exit 0. Adoption into an
+existing project is the other path worth exercising:
+
+```bash
+python scripts/init.py --adopt /path/to/some/other/repo --dry-run
 ```
 
 ---
 
 ## Reproducing a result
 
-The part people skip, and the part that matters six months later. Enough for
-somebody else to get the same output you got:
-
-- **Pinned versions.** Which lockfile is authoritative, and how to install from
-  it exactly rather than approximately.
-- **Inputs.** Where the data or fixtures come from, and which version of them.
-- **Randomness.** Seeds, and anything else that varies between runs.
-- **Environment.** Variables that change behaviour - and their safe defaults.
-  Never the secret values; those live in `.env`, which is gitignored.
-
-If a result cannot be reproduced from this section alone, it is not reproducible,
-and saying so here is more useful than implying otherwise.
+- **Pinned versions.** None to pin: stdlib Python plus git. PyYAML is optional
+  and the fallback parser is tested against it for equivalence on the real
+  fixtures.
+- **Inputs.** `tests/invariants.py` generates everything it needs. `usage.py`
+  reads `~/.claude/projects/*.jsonl`, which differs per machine - so its output
+  is *not* reproducible across devices, by nature. Treat its numbers as
+  observations about that machine, never as fixtures.
+- **Randomness.** None. No seeds, no sampling, no network in the test suites.
+- **Environment.** `GUARD_READ_BYTES` and `GUARD_CONTEXT_TOKENS` change the
+  guard's thresholds. Adapter credentials live in `.env`, which is gitignored;
+  `.env.example` documents the names. Never the values.
 
 ## Known rough edges
 
-Things that will waste an hour if nobody warns you: the test that fails on a
-clean checkout until you run something first, the build step that needs to be run
-twice, the port that is usually already taken.
-
-<!--
-WHY THIS FILE EXISTS
-
-An agent that cannot find out how to run the tests will either guess or ask. The
-guess costs a wrong turn; the question costs a round trip. Both are avoidable by
-writing it down once.
-
-It is also the reproducibility contract. `project.yaml` holds the machine-
-readable command list; this file holds the reasoning, the versions and the
-gotchas around them. check.py checks the two agree.
--->
+- **`tests/invariants.py` is slow** (~45s) because each case copies the whole
+  repo. That is the price of testing `check.py` as a subprocess against a real
+  tree, which is what makes the tests trustworthy. `--only` narrows it.
+- **Work directories must live outside the repo.** They used to be in
+  `.invariant-work/`; on Windows a lingering git process holds the directory and
+  `rmtree` fails mid-run with WinError 32. They are in the system temp dir now.
+- **Never hand-build hook payloads as JSON strings.** Windows paths contain
+  backslashes, which are JSON escapes; the parse fails, the guard exits 0, and
+  the test silently passes for the wrong reason. `tests/hooks.py` uses
+  `json.dumps`.
+- **`scan.py` without gitleaks reads the working tree only.** Git history is
+  where old credentials hide. The warning says so; do not treat the fallback as
+  a passed security gate.
+- **The `.sh` adapters need bash.** On Windows that means git-bash. The `.ps1`
+  shims cover the Python scripts, not the adapters.

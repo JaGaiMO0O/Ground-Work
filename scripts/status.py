@@ -39,6 +39,17 @@ def _git(*args: str) -> str:
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
+def _clip(text: str, limit: int = 72) -> str:
+    """Nothing pulled in from outside may be unbounded.
+
+    A commit subject is *conventionally* short, but nothing enforces it - and a
+    single long one is enough to push STATUS.md past its budget, which is how
+    this was found. Everything derived from elsewhere gets clipped.
+    """
+    text = " ".join(str(text).split())
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
 def _branch_line() -> str:
     if not lib.is_git_repo():
         return "not a git repository"
@@ -46,7 +57,7 @@ def _branch_line() -> str:
         return "git repository with no commits yet"
     branch = _git("rev-parse", "--abbrev-ref", "HEAD") or "?"
     sha = _git("rev-parse", "--short", "HEAD") or "?"
-    subject = _git("log", "-1", "--pretty=%s")
+    subject = _clip(_git("log", "-1", "--pretty=%s"))
     when = _git("log", "-1", "--pretty=%cs")
     dirty = _git("status", "--porcelain")
     changed = len([l for l in dirty.splitlines() if l.strip()])
@@ -85,7 +96,7 @@ def _handoff_line() -> str:
     nxt = re.search(r"^Next:\s*(.+)$", text, re.M)
     line = newest.name
     if nxt and nxt.group(1).strip():
-        line += f"\n              Next: {nxt.group(1).strip()}"
+        line += f"\n              Next: {_clip(nxt.group(1))}"
     return line
 
 
@@ -217,6 +228,17 @@ def main() -> int:
         return 1
 
     STATUS.write_text(updated, encoding="utf-8")
+
+    # One settling pass. check.py validates STATUS.md, and we just rewrote it -
+    # so the validation line we captured describes the file as it was a moment
+    # ago. Rebuild once against the file that now exists; if that changes the
+    # answer, the second write is the honest one. A status line reporting an
+    # error that has already been fixed is worse than no status line.
+    settled = human + "\n" + build_block(project)
+    strip = lambda s: re.sub(r"^Generated:.*$", "", s, flags=re.M)
+    if strip(settled) != strip(updated):
+        STATUS.write_text(settled, encoding="utf-8")
+
     lib.ok("STATUS.md regenerated (human zone untouched)")
     return 0
 

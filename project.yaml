@@ -10,23 +10,62 @@
 #
 # Field reference is the commented block at the foot of this file.
 
-project: <PROJECT_NAME>
+project: ground-work
 
 # Which profile's extra artifacts and rules apply. `general` is right for
 # almost everything. See profiles/ for what each one adds.
+#
+# This repo IS the template, so it stays on `general` and ships every profile.
+# A project created from it keeps only the one it chose.
 profile: general
 
 # How to build, test, lint and run this project. RUNBOOK.md explains them for
 # humans; this is the machine-readable list, so check.py can verify the runbook
 # has not drifted from reality. Reproducibility starts here.
 commands:
+  check: python scripts/check.py
+  test: python tests/invariants.py
+  test-hooks: python tests/hooks.py
+  usage: python scripts/usage.py
 
 defaults:
   access: read-only
   survey: false
 
 # The parts of the work, each with a card in map/<name>/CARD.md.
-areas: []
+#
+# survey: false on all of them deliberately - this repo is small enough to read,
+# and a card is only worth writing when something will be read more than twice.
+# The declaration still earns its keep: usage.py attributes re-read hotspots to
+# an area, and check.py verifies the paths exist.
+areas:
+  - name: scripts
+    kind: local
+    paths:
+      - scripts/**
+    owner: myaghmour
+    survey: false
+
+  - name: tests
+    kind: local
+    paths:
+      - tests/**
+    owner: myaghmour
+    survey: false
+
+  - name: docs
+    kind: local
+    paths:
+      - docs/**
+    owner: myaghmour
+    survey: false
+
+  - name: profiles
+    kind: local
+    paths:
+      - profiles/**
+    owner: myaghmour
+    survey: false
 
 # ============================================================================
 # REFERENCE - copy what fits into `areas:` above.
