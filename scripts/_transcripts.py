@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -51,6 +52,22 @@ ORIENTATION_TOOLS = {
     "Read", "Grep", "Glob", "LS", "NotebookRead", "WebFetch", "WebSearch",
 }
 WORK_TOOLS = {"Edit", "MultiEdit", "Write", "NotebookEdit", "Bash"}
+
+
+def native_path(recorded: str) -> Path:
+    """Turn a path as recorded in a transcript into one this OS can open.
+
+    A session run through git-bash records POSIX paths - `/c/Users/...`. On
+    Windows those resolve to `C:\\c\\Users\\...`, which does not exist, so every
+    file lookup silently fails and anything derived from it degrades to
+    "unknown". Same trap as a hook payload carrying a POSIX `cwd`.
+    """
+    text = str(recorded)
+    if os.name == "nt":
+        match = re.match(r"^/([a-zA-Z])/(.*)$", text)
+        if match:
+            text = f"{match.group(1).upper()}:/{match.group(2)}"
+    return Path(text)
 
 
 def _slug(path: Path) -> str:

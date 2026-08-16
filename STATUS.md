@@ -58,12 +58,12 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-08-06 14:23 UTC
-Branch:       main @ f812c54 (2026-08-03), 5 uncommitted change(s)
-              "Initial commit: Ground Work, a scaffold for agent-assisted projects S..."
+Generated:    2026-08-16 07:45 UTC
+Branch:       main @ bf5af80 (2026-08-06), 4 uncommitted change(s)
+              "Make the repo describe itself, and fix two status.py defects"
 Validation:   clean
-Last handoff: 2026-08-03-ground-work-v1.md
+Last handoff: 2026-08-06-first-real-adoption-trial.md
 Areas:        4 declared, 0 with a card
-Budget:       cache 97%; peak context 643k; orientation 4%   -> python scripts/usage.py
+Budget:       cache 97%; peak context 689k; orientation 4%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->

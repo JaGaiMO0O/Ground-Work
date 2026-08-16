@@ -221,7 +221,7 @@ def section_rereads(tel: tx.Telemetry, top: int, project) -> "list[str]":
     for path, sessions in sessions_by_file.items():
         if len(sessions) < 3:
             continue
-        cost = _file_tokens(Path(path))
+        cost = _file_tokens(tx.native_path(path))
         wasted = cost * (len(sessions) - 1) if cost else None
         rows.append((len(sessions), wasted or 0, path, cost))
     if not rows:
@@ -239,7 +239,7 @@ def section_rereads(tel: tx.Telemetry, top: int, project) -> "list[str]":
         area = None
         if project is not None:
             try:
-                rel = Path(path).resolve().relative_to(lib.ROOT).as_posix()
+                rel = tx.native_path(path).resolve().relative_to(lib.ROOT).as_posix()
                 found = project.area_for(rel)
                 area = found.name if found else None
             except (ValueError, OSError):
@@ -274,11 +274,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--all", action="store_true",
                         help="every project on this machine, not just this one")
+    parser.add_argument("--path", metavar="DIR",
+                        help="report on another project's directory, not this one")
     parser.add_argument("--top", type=int, default=10,
                         help="rows per table (default 10)")
     args = parser.parse_args()
 
-    tel = tx.read_all() if args.all else tx.read_for(lib.ROOT)
+    if args.all:
+        tel = tx.read_all()
+    elif args.path:
+        # Baselining a project BEFORE adopting the scaffold into it: the tool
+        # has to be able to look somewhere other than where it lives.
+        tel = tx.read_for(Path(args.path).resolve())
+    else:
+        tel = tx.read_for(lib.ROOT)
 
     if not tel.ok:
         lib.warn("no readable session telemetry")
