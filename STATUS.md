@@ -58,12 +58,12 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-08-16 09:36 UTC
-Branch:       main @ 509276c (2026-08-16), 12 uncommitted change(s)
-              "Record three defects from the first real adoption"
+Generated:    2026-08-16 13:03 UTC
+Branch:       main @ 1515915 (2026-08-16), 2 uncommitted change(s)
+              "Fix the three defects the Name Screening adoption found"
 Validation:   clean
-Last handoff: 2026-08-16-adoption-weight-and-refusals.md
+Last handoff: 2026-08-16-jlgc-adoption-trial.md
 Areas:        4 declared, 0 with a card
-Budget:       cache 97%; peak context 695k; orientation 8%   -> python scripts/usage.py
+Budget:       cache 97%; peak context 695k; orientation 11%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->
