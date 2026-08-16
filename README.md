@@ -32,6 +32,7 @@ That single change does most of the work. The rest of this repo protects it.
 |---|---|---|
 | `AGENTS.md` | the router, loaded every turn, deliberately small | where is everything? |
 | `STATUS.md` | state: phase, goals, blockers | where are we now? |
+| `STATUS.template.md` | the pristine copy of the above | what does a new project start from? |
 | `RUNBOOK.md` | build, test, run, reproduce | how do I work on this? |
 | `project.yaml` | areas, owners, commands, profile | what exists? |
 | `map/<area>/` | one card per area | what is this, and what will bite me? |

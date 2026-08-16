@@ -219,6 +219,10 @@ class Project:
     parser: str
     path: Path
     errors: "list[str]" = field(default_factory=list)
+    # True only in the scaffold repo itself. Its AGENTS.md is meant to still be
+    # full of placeholders; in a real project that is an error. init.py strips
+    # the field, so no project made from the template can inherit the exemption.
+    template: bool = False
 
     def get(self, name: str) -> "Area | None":
         for a in self.areas:
@@ -375,6 +379,7 @@ def load_project(path: Path = PROJECT_FILE) -> Project:
         parser=parser,
         path=path,
         errors=errors,
+        template=bool(data.get("template", False)),
     )
 
 

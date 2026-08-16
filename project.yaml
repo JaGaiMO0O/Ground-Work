@@ -14,10 +14,17 @@ project: ground-work
 
 # Which profile's extra artifacts and rules apply. `general` is right for
 # almost everything. See profiles/ for what each one adds.
-#
-# This repo IS the template, so it stays on `general` and ships every profile.
-# A project created from it keeps only the one it chose.
 profile: general
+
+# TEMPLATE MARKER - init.py deletes these lines the moment this stops being the
+# scaffold and becomes a project, so nothing made from it inherits them.
+#
+# This repo IS the template: it stays on `general` and ships every profile,
+# where a project created from it keeps only the one it chose. And its AGENTS.md
+# is expected to still hold <PROJECT_NAME> and the two <ONE SENTENCE> blanks.
+# Everywhere else that is an error - Tier 0 is the first file every session
+# reads, and a router describing no project is worse than none.
+template: true
 
 # How to build, test, lint and run this project. RUNBOOK.md explains them for
 # humans; this is the machine-readable list, so check.py can verify the runbook

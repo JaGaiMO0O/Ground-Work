@@ -17,6 +17,7 @@ are removed at the end, and they are the fastest way to learn the card format.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -29,11 +30,26 @@ from _lib import ROOT
 AGENTS = ROOT / "AGENTS.md"
 README = ROOT / "README.md"
 PROJECT = ROOT / "project.yaml"
+STATUS = ROOT / "STATUS.md"
+STATUS_TEMPLATE = ROOT / "STATUS.template.md"
 
 PROJECT_TOKEN = "<PROJECT_NAME>"
 PURPOSE_RE = re.compile(r"<ONE SENTENCE[^>]*for>")
 DONE_RE = re.compile(r"<ONE SENTENCE[^>]*finished>")
 DB_ROLE_TOKEN = "<DB_ROLE>"
+
+# The one line project.yaml carries to say "this is the scaffold, not a project
+# made from it". check.py reads it to decide whether unfilled Tier 0
+# placeholders are expected or an error. Removed the moment init runs.
+TEMPLATE_MARKER_RE = re.compile(
+    r"\n?^# TEMPLATE MARKER[^\n]*\n(?:^#[^\n]*\n)*^template:[ \t]*true[ \t]*$\n?",
+    re.M,
+)
+
+STATUS_PURPOSE_TOKEN = "<what this phase is for, in one line>"
+STATUS_DONE_TOKEN = (
+    "<the condition that ends this phase - be specific enough to disagree with>"
+)
 
 
 def available_profiles() -> "list[str]":
@@ -56,6 +72,51 @@ def ask(prompt: str, default: str = "") -> str:
     except EOFError:
         answer = ""
     return answer or default
+
+
+def personalized_agents(text: str, project: str, purpose: str, done: str,
+                        db_role: str) -> str:
+    """Fill in the Tier 0 router. Used by both plain init and --adopt.
+
+    A lambda rather than a plain replacement string, because re.sub reads
+    backslashes in the replacement - a purpose containing a Windows path used to
+    raise, or silently eat characters.
+    """
+    text = text.replace(PROJECT_TOKEN, project)
+    text = text.replace(DB_ROLE_TOKEN, db_role or "none")
+    if purpose:
+        text = PURPOSE_RE.sub(lambda _m: purpose, text)
+    if done:
+        text = DONE_RE.sub(lambda _m: done, text)
+    return text
+
+
+def unfilled(text: str) -> "list[str]":
+    """Which of the tokens init substitutes are still in there. `<area>` and
+    `<topic>` in the command table are usage syntax, not blanks - so this asks
+    only about the three that mean nobody personalized the file."""
+    return [t for t in (PROJECT_TOKEN, "<ONE SENTENCE", DB_ROLE_TOKEN) if t in text]
+
+
+def render_status(purpose: str = "", done: str = "") -> "str | None":
+    """The pristine goal ladder, dated, with whatever we were told filled in.
+
+    Always from STATUS.template.md, never from STATUS.md. Once this repo started
+    describing itself, copying STATUS.md into another project handed it Ground
+    Work's goal ladder and blockers - stated confidently, in the file AGENTS.md
+    routes to for 'where this project stands'.
+    """
+    if not STATUS_TEMPLATE.is_file():
+        return None
+    from datetime import date
+
+    text = STATUS_TEMPLATE.read_text(encoding="utf-8")
+    text = text.replace("reviewed: <date>", f"reviewed: {date.today().isoformat()}")
+    if purpose:
+        text = text.replace(STATUS_PURPOSE_TOKEN, purpose)
+    if done:
+        text = text.replace(STATUS_DONE_TOKEN, done)
+    return text
 
 
 def scaffold_files(profile: str) -> "list[Path]":
@@ -88,20 +149,29 @@ integration/fixtures/**/raw/
 """
 
 
-def merge_gitignore(target: Path, dry_run: bool) -> str:
-    """Append what we need, never rewrite what is there."""
+def merge_gitignore(target: Path, dry_run: bool) -> "tuple[str, str]":
+    """Append what we need, never rewrite what is there.
+
+    -> (outcome, message), outcome one of modified | created | unchanged.
+
+    The outcome is not just for reporting. It decides what the undo message may
+    honestly promise: `git clean` deletes a .gitignore adoption created, and
+    cannot touch one adoption modified, because that one is tracked.
+    """
     path = target / ".gitignore"
-    existing = path.read_text(encoding="utf-8") if path.is_file() else ""
+    existed = path.is_file()
+    existing = path.read_text(encoding="utf-8") if existed else ""
     missing = [
         line for line in ("systems/", ".env", "integration/fixtures/**/raw/")
         if line not in existing
     ]
     if not missing:
-        return "already covers what we need"
+        return "unchanged", "already covers what we need"
     if not dry_run:
         path.write_text(existing.rstrip("\n") + "\n" + GITIGNORE_ADDITIONS,
                         encoding="utf-8")
-    return f"appended {len(missing)} entry(ies)"
+    outcome = "modified" if existed else "created"
+    return outcome, f"{outcome}, appended {len(missing)} entry(ies)"
 
 
 def adopt(args, profile: str) -> int:
@@ -151,6 +221,21 @@ def adopt(args, profile: str) -> int:
     areas = _adopt.propose_areas(target)
     name = args.project or target.name.lower().replace(" ", "-")
 
+    # AGENTS.md is Tier 0 - the router, loaded on every turn. Plain init has
+    # always filled it in; adopt never did, so every adopted project opened with
+    # `# Project: <PROJECT_NAME>`. Ask if there is somebody to ask. If not, the
+    # placeholders stay and check.py fails on them at the end of this run: rule
+    # 2 forbids inventing a purpose, but an unfilled router must be loud.
+    purpose, done = args.purpose, args.done
+    if not (purpose and done) and sys.stdin.isatty():
+        lib.info(
+            "\n  Two questions. The answers go into AGENTS.md, which is loaded on\n"
+            "  every turn of every conversation - so keep them to one line.\n"
+            "  Enter skips, and check.py will fail until they are filled in.\n"
+        )
+        purpose = purpose or ask("Purpose (one sentence)")
+        done = done or ask("Done = (one sentence)")
+
     lib.info(f"\n  adopting {target}")
     lib.info(f"  profile   {profile}"
              + ("" if args.keep_profiles else "   (the others are not copied)"))
@@ -166,14 +251,11 @@ def adopt(args, profile: str) -> int:
         (target / "project.yaml", _adopt.project_yaml(name, profile, found, areas)),
         (target / "RUNBOOK.md", _adopt.runbook(name, found)),
     ]
-    status_src = ROOT / "STATUS.md"
-    if status_src.is_file():
-        from datetime import date
-
-        text = status_src.read_text(encoding="utf-8").replace(
-            "reviewed: <date>", f"reviewed: {date.today().isoformat()}"
-        )
-        generated.append((target / "STATUS.md", text))
+    status_text = render_status(purpose or "", done or "")
+    if status_text is None:
+        lib.warn("STATUS.template.md not found - no STATUS.md written")
+    else:
+        generated.append((target / "STATUS.md", status_text))
 
     lib.info("")
     for path, text in generated:
@@ -188,22 +270,50 @@ def adopt(args, profile: str) -> int:
             final.write_text(text, encoding="utf-8")
         lib.ok(note)
 
-    lib.ok(f".gitignore: {merge_gitignore(target, args.dry_run)}")
+    gitignore_outcome, gitignore_note = merge_gitignore(target, args.dry_run)
+    lib.ok(f".gitignore: {gitignore_note}")
+
+    # Everything we run inside the target runs without bytecode. A __pycache__
+    # left under scripts/ survives `git clean -fd` in any project that ignores
+    # *.pyc, which quietly makes the undo above untrue - found by running the
+    # undo rather than by reading it. Not writing the file beats documenting it.
+    quiet_env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 
     if not args.dry_run:
         # Generate the search surface now, so the very first grep in the adopted
         # project already excludes noise and credential-bearing files.
         subprocess.run(
             [sys.executable, str(target / "scripts" / "sync.py"), "--rgignore-only"],
-            cwd=str(target), capture_output=True,
+            cwd=str(target), capture_output=True, env=quiet_env,
         )
         lib.ok(".rgignore generated from the detected areas")
+        # sync.py also creates this, and it is invisible to the undo below - so
+        # report it. An adoption that writes a file it does not name is exactly
+        # how the undo instructions came to be wrong.
+        if (target / "systems" / ".sync-state.json").is_file():
+            lib.ok("systems/.sync-state.json created (empty - nothing to check "
+                   "out yet)")
     lib.ok(f"scaffold: {counts['add']} added, {counts['proposed']} proposed "
            f"alongside existing files, {counts['skip']} already present")
 
     if args.dry_run:
         lib.info("\n  dry run - nothing was written\n")
         return 0
+
+    agents_left: "list[str]" = []
+    agents_path = next(
+        (_adopt.final_path(d, a) for _s, d, a in plan
+         if d.name == "AGENTS.md" and a != "skip"),
+        None,
+    )
+    if agents_path is not None and agents_path.is_file():
+        text = personalized_agents(
+            agents_path.read_text(encoding="utf-8"), name, purpose or "",
+            done or "", args.db_role,
+        )
+        agents_path.write_text(text, encoding="utf-8")
+        agents_left = unfilled(text)
+        lib.ok(f"personalized {agents_path.name}")
 
     proposed = [d for _s, d, a in plan if a == "proposed"]
     if proposed:
@@ -214,24 +324,58 @@ def adopt(args, profile: str) -> int:
                  "overwritten.")
 
     if tracked:
-        lib.info(
-            "\n  If you want out: `git clean -nd` lists everything adoption\n"
-            "  added, and `git clean -fd` removes it. That is exact only "
-            "because\n  the tree was clean before this ran."
-        )
+        # Written once as "-nd lists everything, -fd removes it" and wrong the
+        # same day. git clean only ever touches UNTRACKED, UNIGNORED files, and
+        # adoption produces one of each kind it misses. The honest version names
+        # what it does not cover rather than reaching for -fdx, which would also
+        # delete the venv, the .env and every other ignored file worth keeping.
+        lines = [
+            "\n  If you want out:",
+            "       git clean -nd      lists the files adoption ADDED",
+            "       git clean -fd      removes them",
+            "  Exact only because the tree was clean before this ran. What that",
+            "  does NOT cover:",
+        ]
+        if gitignore_outcome == "modified":
+            lines += [
+                "    - .gitignore was MODIFIED, not added, and git clean never",
+                "      touches a tracked file:  git checkout -- .gitignore",
+            ]
+        lines += [
+            "    - systems/ is ignored by the .gitignore block above, so plain",
+            "      -fd skips it:  git clean -fdx systems/",
+            "  Do not reach for a bare `git clean -fdx` to cover both. It would",
+            "  also delete your venv, your .env, and everything else ignored.",
+        ]
+        lib.info("\n".join(lines))
 
+    steps = [
+        "AGENTS.md      - fill in the purpose and done lines; it is read every turn"
+        if agents_left else
+        "AGENTS.md      - check the purpose and done lines read right",
+        "project.yaml   - fix the proposed areas; they are a guess",
+        "RUNBOOK.md     - verify the detected commands actually run",
+        "python scripts/scan.py",
+        "python scripts/usage.py    - see what this project has cost so far",
+    ]
     lib.info(
         "\n  Next, in " + target.name + ":\n"
-        "    1. project.yaml  - fix the proposed areas; they are a guess\n"
-        "    2. RUNBOOK.md    - verify the detected commands actually run\n"
-        "    3. python scripts/scan.py\n"
-        "    4. python scripts/usage.py    - see what this project has cost so far\n"
-        "\n  Then pick the busiest area and write its card.\n"
+        + "\n".join(f"    {i}. {s}" for i, s in enumerate(steps, 1))
+        + "\n\n  Then pick the busiest area and write its card.\n"
     )
+
+    if agents_left:
+        lib.warn("AGENTS.md is still template text: " + ", ".join(agents_left))
+        lib.info(
+            "       Tier 0 is the first thing every session reads, and check.py\n"
+            "       below will fail on it. Fill it in, or re-run with --purpose\n"
+            "       and --done."
+        )
 
     lib.info("  Validating the result...\n")
     code = subprocess.run(
-        [sys.executable, str(target / "scripts" / "check.py")], cwd=str(target)
+        [sys.executable, str(target / "scripts" / "check.py")], cwd=str(target),
+        env=quiet_env,
     ).returncode
     return 1 if code == 1 else 0
 
@@ -304,39 +448,35 @@ def main() -> int:
         )
 
     edits = []
-    agents_text = AGENTS.read_text(encoding="utf-8")
-    agents_text = agents_text.replace(PROJECT_TOKEN, project)
-    agents_text = PURPOSE_RE.sub(purpose, agents_text)
-    agents_text = DONE_RE.sub(done, agents_text)
-    agents_text = agents_text.replace(DB_ROLE_TOKEN, db_role or "none")
-    edits.append((AGENTS, agents_text))
+    edits.append((AGENTS, personalized_agents(
+        AGENTS.read_text(encoding="utf-8"), project, purpose, done, db_role)))
 
     edits.append((README, README.read_text(encoding="utf-8")
                   .replace(PROJECT_TOKEN, project)))
 
     project_text = PROJECT.read_text(encoding="utf-8").replace(PROJECT_TOKEN, project)
+    # Set the line rather than substituting the token, the way `profile:`
+    # already is. Since this repo started describing itself the token is gone
+    # from its own project.yaml, so replacement alone left a new project called
+    # `ground-work`.
+    project_text = re.sub(r"^project:.*$", f"project: {project}",
+                          project_text, count=1, flags=re.M)
     project_text = re.sub(r"^profile:.*$", f"profile: {profile}",
                           project_text, count=1, flags=re.M)
+    # This has stopped being the template the moment it becomes a project.
+    project_text = TEMPLATE_MARKER_RE.sub("\n", project_text)
     edits.append((PROJECT, project_text))
 
     # The purpose and done answers ARE the goal ladder. Ask once, fill both.
-    status_path = ROOT / "STATUS.md"
-    if status_path.exists():
-        from datetime import date
-
-        status_text = status_path.read_text(encoding="utf-8")
-        status_text = status_text.replace(
-            "reviewed: <date>", f"reviewed: {date.today().isoformat()}"
-        )
-        status_text = status_text.replace(
-            "<what this phase is for, in one line>", purpose
-        )
-        status_text = status_text.replace(
-            "<the condition that ends this phase - be specific enough to "
-            "disagree with>",
-            done,
-        )
-        edits.append((status_path, status_text))
+    #
+    # Rendered from STATUS.template.md rather than patched in place: this repo's
+    # own STATUS.md is filled in, so patching it left the new project holding
+    # Ground Work's goal ladder - the same defect --adopt had.
+    status_text = render_status(purpose, done)
+    if status_text is None:
+        lib.warn("STATUS.template.md not found - STATUS.md left as it is")
+    else:
+        edits.append((STATUS, status_text))
 
     unused = [p for p in profiles if p != profile]
     example_dirs = [

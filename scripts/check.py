@@ -53,6 +53,11 @@ PLACEHOLDERS = (
     "<who>",
 )
 
+# The subset init.py fills in, and the only ones that mean "nobody personalized
+# this". AGENTS.md legitimately contains <area> and <topic> in its command
+# table - those are usage syntax, and flagging them would make the rule useless.
+TIER0_PLACEHOLDERS = ("<PROJECT_NAME>", "<ONE SENTENCE", "<DB_ROLE>")
+
 
 def error(group: str, message: str, fix: str = "") -> None:
     FINDINGS.append(Finding("error", group, message, fix))
@@ -110,6 +115,23 @@ def check_tier0(ctx: Ctx) -> None:
         return
 
     text = read(agents)
+
+    # An unfilled router is the one Tier 0 defect that costs on every turn of
+    # every conversation and reads as fine. Measuring its token budget and
+    # calling it well within it - which is all this rule used to do - is
+    # measuring the wrong thing about a file whose first four lines are blanks.
+    left = [p for p in TIER0_PLACEHOLDERS if p in text]
+    if left and ctx.project.template:
+        note("AGENTS.md is still template text, as it should be here "
+             "(project.yaml declares 'template: true')")
+    elif left:
+        error(
+            g,
+            "AGENTS.md still contains template placeholders: " + ", ".join(left),
+            "This is the first file every session reads, and it currently "
+            "describes no project. python scripts/init.py, or fill them in.",
+        )
+
     lines = text.splitlines()
     if len(lines) > lib.AGENTS_MD_MAX_LINES:
         error(
@@ -161,6 +183,9 @@ def check_project(ctx: Ctx) -> None:
         note("PyYAML not installed - used the bundled subset parser")
 
     note(f"profile: {project.profile}")
+    if project.template:
+        note("template: true - this is the scaffold itself, not a project made "
+             "from it")
 
     if not project.areas:
         note("no areas declared yet (expected for a fresh template)")
@@ -415,6 +440,30 @@ def check_status(ctx: Ctx) -> None:
     left = [p for p in PLACEHOLDERS if p in human]
     if left:
         warn(g, "STATUS.md goal ladder is still template text: " + ", ".join(left))
+
+    # The pristine ladder init.py and --adopt render from. Only meaningful where
+    # init.py can still run - adoption carries neither file, and an adopted
+    # project must not be nagged about a template it was never given.
+    #
+    # This rule exists because the absence of it cost a real adoption: once this
+    # repo filled its own STATUS.md in, adoption started handing that file to
+    # other projects, and nothing anywhere noticed.
+    template = ROOT / "STATUS.template.md"
+    if (ROOT / "scripts" / "init.py").is_file():
+        if not template.is_file():
+            warn(
+                g,
+                "STATUS.template.md is missing",
+                "init.py and --adopt render STATUS.md from it. Without it, the "
+                "next project inherits this one's goal ladder.",
+            )
+        elif "<what this phase is for" not in read(template):
+            warn(
+                g,
+                "STATUS.template.md has been filled in",
+                "It is the pristine copy, not a status. Whatever is written "
+                "there is handed to the next project as its own.",
+            )
 
     if not re.search(r"^phase:\s*\S+", text, re.M):
         warn(g, "STATUS.md has no 'phase:' in its front matter")

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -147,23 +148,44 @@ def build_pristine():
     )
 
 
-def seed_status():
-    """Make STATUS.md look like init.py filled it in. Without this every case
-    inherits the template's unfilled goal ladder and warns."""
-    path = WORK / "STATUS.md"
-    if not path.is_file():
-        return
-    text = path.read_text(encoding="utf-8")
-    text = text.replace("reviewed: <date>", "reviewed: 2026-08-03")
-    text = text.replace(
-        "<what this phase is for, in one line>", "keep the harness honest"
-    )
-    text = text.replace("<what follows it>", "ship it")
-    text = text.replace(
-        "<the condition that ends this phase - be specific enough to disagree with>",
-        "every rule has a test",
-    )
-    path.write_text(text, encoding="utf-8")
+def seed_initialised():
+    """Make the copy look like init.py has been run on it.
+
+    Every case declares its own project.yaml, which carries no `template: true`
+    - so each one is a real project, and a real project with an unfilled Tier 0
+    or an unfilled goal ladder is a finding. Seeding both here keeps unrelated
+    cases from inheriting a failure that has nothing to do with what they test.
+
+    STATUS.md is rendered from STATUS.template.md rather than patched, because
+    this repo's own STATUS.md has been filled in since it started describing
+    itself. Patching it silently stopped doing anything, which took the
+    'STATUS goals gone stale' case down with it - it had no unreviewed date left
+    to go stale from.
+    """
+    template = WORK / "STATUS.template.md"
+    status = WORK / "STATUS.md"
+    if template.is_file():
+        text = template.read_text(encoding="utf-8")
+        text = text.replace("reviewed: <date>", "reviewed: 2026-08-03")
+        text = text.replace(
+            "<what this phase is for, in one line>", "keep the harness honest"
+        )
+        text = text.replace("<what follows it>", "ship it")
+        text = text.replace(
+            "<the condition that ends this phase - be specific enough to "
+            "disagree with>",
+            "every rule has a test",
+        )
+        status.write_text(text, encoding="utf-8")
+
+    agents = WORK / "AGENTS.md"
+    if agents.is_file():
+        text = agents.read_text(encoding="utf-8")
+        text = text.replace("<PROJECT_NAME>", "t")
+        text = re.sub(r"<ONE SENTENCE[^>]*for>", "keep the harness honest", text)
+        text = re.sub(r"<ONE SENTENCE[^>]*finished>", "every rule has a test", text)
+        text = text.replace("<DB_ROLE>", "analyst_ro")
+        agents.write_text(text, encoding="utf-8")
 
 
 def seed_runbook(command: str):
@@ -180,7 +202,7 @@ def fresh(index: int, use_git: bool):
     global WORK
     WORK = BASE / f"case-{index:02d}"
     shutil.copytree(PRISTINE, WORK)
-    seed_status()
+    seed_initialised()
     if use_git:
         run(["git", "init", "-q"])
         run(["git", "config", "user.email", "t@t"])
@@ -351,6 +373,31 @@ def m_tier0_bloated():
     )
 
 
+def m_tier0_unfilled():
+    """An adopted project arrived with `# Project: <PROJECT_NAME>` and check.py
+    reported its token budget and nothing else."""
+    setup()
+    patch("AGENTS.md", "# Project: t", "# Project: <PROJECT_NAME>")
+
+
+def m_tier0_usage_syntax():  # positive control
+    """AGENTS.md's command table legitimately contains <area> and <topic>. A
+    rule that reads every angle bracket as an unfilled blank is a rule nobody
+    can keep clean."""
+    setup()
+    patch("AGENTS.md", "| `python scripts/scan.py` | Secret scan |",
+          "| `python scripts/scan.py` | Secret scan |\n"
+          "| `python scripts/new_card.py <area>` | Start a card for <area> |")
+
+
+def m_template_repo_exempt():  # positive control
+    """The scaffold itself is meant to hold placeholders - that is what it is
+    for. `template: true` is how it says so, and init.py deletes the line."""
+    setup()
+    patch("AGENTS.md", "# Project: t", "# Project: <PROJECT_NAME>")
+    patch("project.yaml", "profile: general", "profile: general\ntemplate: true")
+
+
 def m_example_card_broken():
     setup()
     patch(
@@ -385,6 +432,13 @@ def m_status_over_budget():
 def m_status_missing():
     setup()
     (WORK / "STATUS.md").unlink()
+
+
+def m_status_template_gone():
+    """Delete the pristine ladder and adoption silently starts shipping this
+    project's own STATUS.md again - which is exactly how it happened."""
+    setup()
+    (WORK / "STATUS.template.md").unlink()
 
 
 def m_status_goals_stale():
@@ -468,12 +522,16 @@ CASES = [
     ("orphan card dir",                m_orphan_card,               2, "no matching area",              False),
     ("adapter declared, absent",       m_adapter_missing,           1, "not found on disk",             False),
     ("Tier 0 over line limit",         m_tier0_bloated,             1, "max 150",                       False),
+    ("Tier 0 never filled in",         m_tier0_unfilled,            1, "template placeholders",         False),
+    ("Tier 0 usage syntax       [+]",  m_tier0_usage_syntax,        0, "",                              False),
+    ("template repo is exempt   [+]",  m_template_repo_exempt,      0, "",                              False),
     ("example card broken",            m_example_card_broken,       1, "example card is missing",       False),
     (".rgignore hand-edited",          m_rgignore_stale,            2, "out of sync",                   False),
     ("STATUS marker corrupted",        m_status_no_marker,          1, "no generated-zone marker",      False),
     ("STATUS over budget",             m_status_over_budget,        1, "over the",                      False),
     ("STATUS missing",                 m_status_missing,            2, "STATUS.md is missing",          False),
     ("STATUS goals gone stale",        m_status_goals_stale,        2, "last reviewed",                 False),
+    ("STATUS.template.md deleted",     m_status_template_gone,      2, "STATUS.template.md is missing", False),
     ("RUNBOOK omits a command",        m_runbook_missing_command,   2, "does not mention the 'test'",   False),
     ("RUNBOOK missing",                m_runbook_missing,           2, "RUNBOOK.md is missing",         False),
     # these need real tracked files

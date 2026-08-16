@@ -316,8 +316,24 @@ card for the busiest one.
 It refuses on a project that is not under version control, and on one with a
 dirty tree. Both refusals protect the same thing: adoption writes dozens of
 files, and the only reason that is a safe thing to do to somebody's repository
-is that `git clean -nd` can list every one of them afterwards. Where that undo
-does not exist, `git init` first.
+is that `git clean -nd` can list them afterwards. Where that undo does not
+exist, `git init` first.
+
+**`git clean` is not the whole undo, and saying it was cost a session.** It
+touches untracked, unignored files only - so it misses the `.gitignore` adoption
+appended to, which is tracked, and it misses `systems/`, which the block it just
+appended made ignored. The success message names both gaps rather than reaching
+for `git clean -fdx`, which would also delete the venv and the `.env`. An undo
+path is a claim, and claims about destructive commands get run before they get
+printed.
+
+**Adoption carries templates, never content.** Once this repo began describing
+itself, the copy step started handing other projects Ground Work's own goal
+ladder, handoffs and ADRs - into `STATUS.md` and `context/handoffs/`, the two
+places `AGENTS.md` routes to first. Everything self-describing now travels as
+its `_TEMPLATE`, and `STATUS.md` is rendered from `STATUS.template.md`. A map
+that describes the wrong territory, in the always-loaded tier, is the worst
+failure this design has.
 
 **Starting fresh.** `python scripts/init.py`, then declare areas as they emerge.
 Do not invent an area map before there is code in it.

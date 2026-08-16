@@ -4,7 +4,7 @@ Most projects that need this were started before anyone thought about it. So the
 scaffold has to arrive in a repo full of code, without breaking anything and
 without pretending to know things it does not.
 
-Three rules:
+Four rules:
 
   1. NEVER clobber. A file that already exists is left alone; our version lands
      beside it as `<name>.proposed` and the user is told. Nothing about adoption
@@ -15,6 +15,11 @@ Three rules:
      worse than an obvious gap.
   3. Refuse on a dirty tree unless forced, so `git diff` afterwards shows exactly
      what adoption did and nothing else.
+  4. Carry TEMPLATES, never content. Anything this repo filled in about itself -
+     its status, its handoffs, its decisions - stays here. Rule 2 forbids
+     inventing a wrong answer; shipping a confident answer about a different
+     project is the same failure with better grammar, and it lands in the tier an
+     agent reads first.
 """
 
 from __future__ import annotations
@@ -39,8 +44,9 @@ NOISE = {
 NEVER_CLOBBER = {"AGENTS.md", "CLAUDE.md"}
 
 # Written per-project by init.adopt(), never copied verbatim - so they must NOT
-# appear in the copy plan or they get handled twice.
-GENERATED_HERE = {"project.yaml", "RUNBOOK.md", "STATUS.md"}
+# appear in the copy plan or they get handled twice. STATUS.md is rendered from
+# STATUS.template.md; this repo's own STATUS.md describes this repo.
+GENERATED_HERE = {"project.yaml", "RUNBOOK.md", "STATUS.md", "STATUS.template.md"}
 
 # The target has its own README. Ours describes the template, so it would be
 # noise - adoption explains itself through START-HERE.md instead.
@@ -63,6 +69,16 @@ SKIP_ON_ADOPT_DIRS = {"tests"}
 SKIP_ON_ADOPT_FILES = {"scripts/init.py", "scripts/_adopt.py"}
 SHIM_SUFFIXES = {".sh", ".ps1"}
 
+# Directories where every file is something THIS project recorded about itself.
+# Only the templates in them travel - a name starting with `_`, which is the
+# convention everywhere else in the repo (map/_TEMPLATE, context/recipes).
+#
+# This is rule 4, and it was a real regression rather than a hypothetical: an
+# adoption carried three dated handoffs and ADRs 0001-0003 into somebody else's
+# repository, where AGENTS.md routes to "the newest handoff" for what happened
+# last session. The first thing an agent read there described Ground Work.
+SELF_DESCRIBING_DIRS = {"context/handoffs", "docs/decisions"}
+
 
 def travels(rel: Path) -> bool:
     """Is this template file worth carrying into an adopted project?"""
@@ -72,6 +88,9 @@ def travels(rel: Path) -> bool:
     if rel.as_posix() in SKIP_ON_ADOPT_FILES:
         return False
     if len(parts) == 2 and parts[0] == "scripts" and rel.suffix in SHIM_SUFFIXES:
+        return False
+    parent = rel.parent.as_posix()
+    if parent in SELF_DESCRIBING_DIRS and not rel.name.startswith("_"):
         return False
     return True
 
@@ -325,16 +344,23 @@ def scaffold_plan(template: Path, target: Path, profile: str = "general",
     return list(plan.values())
 
 
+def final_path(destination: Path, action: str) -> Path:
+    """Where a planned file actually lands. Callers that need to edit a copied
+    file afterwards - init.py personalizing AGENTS.md - have to agree with
+    apply_plan about this, so there is one function that decides it."""
+    return (
+        destination.with_suffix(destination.suffix + ".proposed")
+        if action == "proposed" else destination
+    )
+
+
 def apply_plan(plan, dry_run: bool) -> dict:
     counts = {"add": 0, "proposed": 0, "skip": 0}
     for source, destination, action in plan:
         counts[action] += 1
         if dry_run or action == "skip":
             continue
-        final = (
-            destination.with_suffix(destination.suffix + ".proposed")
-            if action == "proposed" else destination
-        )
+        final = final_path(destination, action)
         final.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, final)
     return counts
