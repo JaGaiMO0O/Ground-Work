@@ -105,8 +105,98 @@ Three findings, none of them predicted:
   than a defect - but it is the first case seen where a reader following the
   advice would card the wrong area first.
 
+## Real adoption into Name Screening - done, and it found three defects
+
+Target: `Desktop/Ground-Work-Tests/name-screening`, a copy of Maya's clone.
+
+**Held up.** 64 pre-existing files hashed before and after; exactly one content
+change, `.gitignore`, appended in a marked block. `check.py` sane with five
+declared areas. Hooks resolve and fire from the adopted tree - `.env` read
+blocked, `systems/` write blocked, ordinary edit silent. That is ADR 0003's
+central claim, tested in the configuration the ADR chose. `usage.py` degraded to
+"no transcript directory found" rather than a zero. The project's 4 pytest
+collection errors are all pre-existing (missing `metaphone`/`rapidfuzz`, a
+missing CSV, duplicate test basenames) - adoption broke nothing.
+
+**Weight: 58 added against 64 existing - 0.91x.** Third data point, after 0.64x
+on the dry run and 4.75x on dry bean. The weight complaint is a small-project
+artefact. ADR 0003's "still too heavy" consequence can be revised on this
+evidence, and should be.
+
+### Defect 1 - the scaffold ships its own content as the project's content
+
+**The worst of the three, and a regression from bf5af80.** Making the repo
+describe itself meant adoption now copies real state where it used to copy a
+template. Four artefacts, not one:
+
+| Arrived carrying | Contents |
+|---|---|
+| `STATUS.md` | Ground Work's goal ladder. "Now" reads *"Adoption mechanics on a copy of `Maya/name-screening`"*; a listed blocker is this directory being named `Legacy Modernization` |
+| `context/handoffs/` | All three dated handoffs, including this one - 120 lines about `propose_areas` and ADR 0003 |
+| `docs/decisions/` | ADRs 0001-0003, including the one arguing about whether the scaffold should be copied at all |
+| `AGENTS.md` | see defect 2 |
+
+`AGENTS.md` routes to the first two as authoritative - STATUS.md for "where this
+project stands", newest handoff for "what happened last session". So **the first
+two files an agent reads describe a different project, confidently.** Every
+principle this repo is built on is inverted at once: the map describes the wrong
+territory, and it is the always-loaded tier that does it.
+
+Fix: adoption must copy *templates*, never live content. A pristine
+`STATUS.template.md`, `_TEMPLATE.md` from `context/handoffs/` and nothing dated,
+and `docs/decisions/` seeded with its template only. The general rule worth
+writing into `travels()`: **anything this project filled in about itself does not
+travel.**
+
+### Defect 2 - AGENTS.md arrives unpersonalized and nothing says to fix it
+
+`<PROJECT_NAME>` and both `<ONE SENTENCE>` placeholders survive adoption. Plain
+`init.py` substitutes them; `adopt()` never has. The "Next" list names
+project.yaml, RUNBOOK.md, scan.py and usage.py - not AGENTS.md.
+
+The deeper half: **`check.py` passes clean on it**, and reports "Tier 0 ~706
+tokens of 1500 budget" on a file whose first four lines are placeholders. A
+validator that measures an unfilled router and calls it well within budget is
+measuring the wrong thing. Placeholders surviving in Tier 0 should be an error,
+not silence - and that rule belongs in core, where it also guards plain `init`.
+
+### Defect 3 - the advertised undo is wrong, both halves
+
+The success message promises `git clean -nd` lists everything adoption added and
+`-fd` removes it. False twice over:
+
+- `.gitignore` was **modified**, and `git clean` never touches tracked files.
+- `systems/.sync-state.json` sits under a path adoption's own `.gitignore` block
+  just ignored - verified `.gitignore:53:systems/` - so plain `git clean -fd`
+  skips it. It needs `-x`.
+
+Note the trap in the obvious fix: `-fdx` also deletes venvs and `.env`. The
+message must state what it does *not* cover rather than reach for a more
+destructive flag. Written this session, wrong the same day - a claim about an
+undo path is worth testing before printing it.
+
+**Also:** `systems/.sync-state.json` is not reported at all. (The "53 added"
+line is not undercounting - the generated files each get their own `ok` line.)
+
+### Ranking misled again, as predicted
+
+`sota_screening` (16 files) first, `my_name_screening` (10) third. Second
+confirmed instance of a reader being pointed at the wrong area first. No longer
+a prediction.
+
+### Live hazard
+
+That copy still carries Maya's `origin` and tracks
+`origin/feature/phase1-normalization`. Nothing pushes on its own, but a `git
+push` from that directory puts 58 scaffold files on her branch. Worth having
+`--adopt` warn when the target's origin is not one you own - or at minimum, when
+the target tracks a remote branch.
+
 **Next:**
 
+0. **Defects 1 and 2 first, before any further trial.** 1 is a regression that
+   makes every adoption actively misleading; 2 is a one-line omission plus a
+   missing core rule. 3 is a message and a report line. None is large.
 1. **Adoption mechanics - Name Screening.** Adopt into a *copy* of
    `Maya/name-screening`, not the clone: it is on her branch with her remote,
    and 53 files in that working tree is noise the next `git pull` will meet.
