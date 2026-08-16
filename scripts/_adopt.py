@@ -46,6 +46,36 @@ GENERATED_HERE = {"project.yaml", "RUNBOOK.md", "STATUS.md"}
 # noise - adoption explains itself through START-HERE.md instead.
 NOT_ADOPTED = {"README.md"}
 
+# Parts of the template a project will never invoke. See ADR 0003: the scaffold
+# is copied rather than installed, which is only defensible if it copies what
+# gets used. Everything named here stays in the template.
+#
+#   tests/            test the scaffold, not the adopted project
+#   init, _adopt      adoption has already happened by the time these arrive
+#   .sh / .ps1        aliases for the .py files. No document that travels names
+#                     them - the runbook adoption writes uses `python x.py`.
+#
+# scripts/adapters/** deliberately DOES travel, including the worked oracle and
+# postgres ones. They are three files, docs/adapters.md leans on them as the
+# examples you copy, and a doc that describes files which are not there is worse
+# than three unused files that are.
+SKIP_ON_ADOPT_DIRS = {"tests"}
+SKIP_ON_ADOPT_FILES = {"scripts/init.py", "scripts/_adopt.py"}
+SHIM_SUFFIXES = {".sh", ".ps1"}
+
+
+def travels(rel: Path) -> bool:
+    """Is this template file worth carrying into an adopted project?"""
+    parts = rel.parts
+    if parts[0] in SKIP_ON_ADOPT_DIRS:
+        return False
+    if rel.as_posix() in SKIP_ON_ADOPT_FILES:
+        return False
+    if len(parts) == 2 and parts[0] == "scripts" and rel.suffix in SHIM_SUFFIXES:
+        return False
+    return True
+
+
 CODE_SUFFIXES = {
     ".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".java",
     ".kt", ".go", ".rs", ".rb", ".php", ".cs", ".c", ".h", ".cpp", ".hpp",
@@ -207,10 +237,15 @@ def propose_areas(target: Path, limit: int = 6) -> "list[tuple[str, str, int]]":
             and p.suffix.lower() in CODE_SUFFIXES
             and not any(part in NOISE for part in p.parts)
         ]
-        if len(files) < 2:
+        if not files:
             continue
         rows.append((entry.name, f"{entry.name}/**", len(files),
                      weights.get(entry.name, 0)))
+    # One file is enough. This used to require two, which silently dropped
+    # single-file serving layers - an `app/app.py` that every session reads is
+    # exactly the area that most needs a card. Nothing is lost by including
+    # them: the sort below is churn-first, so a one-file directory only takes a
+    # slot when there are fewer than `limit` better candidates.
     # Churn first - the directories people actually change are the ones worth a
     # card - then size as a tiebreak.
     rows.sort(key=lambda r: (r[3], r[2]), reverse=True)
@@ -222,14 +257,46 @@ def propose_areas(target: Path, limit: int = 6) -> "list[tuple[str, str, int]]":
 # ---------------------------------------------------------------------------
 
 
-def scaffold_plan(template: Path, target: Path) -> "list[tuple[Path, Path, str]]":
+def destination_for(target: Path, rel: Path, profile: str,
+                    keep_profiles: bool) -> "Path | None":
+    """Where a template file lands in the target, or None if it does not travel.
+
+    Everything is a straight copy except `profiles/`, which needs the same two
+    moves plain `init.py` makes, and used not to get them:
+
+      * only the chosen profile travels. A project uses one. Carrying the rest
+        was 15 files of a 95-file adoption that nothing would ever load.
+      * a profile's `scaffold/` is an overlay, not a directory to keep. It is
+        copied to the project root and the source is dropped - otherwise the
+        profile's own templates arrive somewhere no rule looks for them.
+    """
+    parts = rel.parts
+    if parts[0] != "profiles" or len(parts) == 1:
+        return target / rel
+    if len(parts) == 2:
+        return target / rel  # profiles/README.md - explains the mechanism
+    if parts[1] != profile:
+        return (target / rel) if keep_profiles else None
+    if parts[2] == "scaffold":
+        return target / Path(*parts[3:]) if len(parts) > 3 else None
+    return target / rel
+
+
+def scaffold_plan(template: Path, target: Path, profile: str = "general",
+                  keep_profiles: bool = False) -> "list[tuple[Path, Path, str]]":
     """-> [(source, destination, action)] where action is add|proposed|skip."""
+    # The template's shape. What of it actually travels is `travels()` below -
+    # this list says where to look, not what to take.
     include = [
         "AGENTS.md", "CLAUDE.md", "START-HERE.md",
         "docs", "context", "map", "interfaces", "scripts", "profiles", "tests",
         ".claude", ".env.example",
     ]
-    plan = []
+    # Keyed by destination, so a scaffold file that overlays a core one appears
+    # once rather than twice. `profiles` comes after `map` and `context` in the
+    # include list, so the scaffold version is the one that survives - the same
+    # precedence plain init.py gets by applying the scaffold last.
+    plan: "dict[Path, tuple[Path, Path, str]]" = {}
     for name in include:
         if name in GENERATED_HERE or name in NOT_ADOPTED:
             continue
@@ -245,13 +312,17 @@ def scaffold_plan(template: Path, target: Path) -> "list[tuple[Path, Path, str]]
                 continue
             if "examples" in rel.parts:
                 continue
-            destination = target / rel
+            if not travels(rel):
+                continue
+            destination = destination_for(target, rel, profile, keep_profiles)
+            if destination is None:
+                continue
             if destination.exists():
-                action = "proposed" if rel.name in NEVER_CLOBBER else "skip"
+                action = "proposed" if destination.name in NEVER_CLOBBER else "skip"
             else:
                 action = "add"
-            plan.append((item, destination, action))
-    return plan
+            plan[destination] = (item, destination, action)
+    return list(plan.values())
 
 
 def apply_plan(plan, dry_run: bool) -> dict:

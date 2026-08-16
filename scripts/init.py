@@ -117,7 +117,8 @@ def adopt(args, profile: str) -> int:
             "     To personalize this template in place, run init.py without --adopt."
         )
 
-    if lib.is_git_repo(target):
+    tracked = lib.is_git_repo(target)
+    if tracked:
         dirty = lib.git("status", "--porcelain", cwd=target)
         changed = [l for l in dirty.stdout.splitlines() if l.strip()]
         if changed and not args.force:
@@ -128,20 +129,37 @@ def adopt(args, profile: str) -> int:
                 "       Or re-run with --force."
             )
             return 1
+    elif not args.force:
+        # Refusing, not warning. Adoption writes ~80 files; in a git repo that
+        # is undoable in one command, and without one it is an afternoon of
+        # deleting things by hand. The advice this tool gives elsewhere assumes
+        # an undo exists, so it should not proceed where none does.
+        lib.err(f"{target.name} is not a git repository - adoption has no undo")
+        lib.info(
+            "       Adoption adds dozens of files. Under git, removing them is\n"
+            "       one command; without it, there is no way back.\n"
+            "       Run `git init` there first - that is the real fix, and it is\n"
+            "       worth having anyway. Or copy the project somewhere safe and\n"
+            "       adopt the copy. Or re-run with --force and accept the risk."
+        )
+        return 1
     else:
-        lib.warn(f"{target.name} is not a git repository - churn ranking unavailable")
+        lib.warn(f"{target.name} is not a git repository - no undo, and churn "
+                 "ranking is unavailable")
 
     found = _adopt.detect(target)
     areas = _adopt.propose_areas(target)
     name = args.project or target.name.lower().replace(" ", "-")
 
     lib.info(f"\n  adopting {target}")
+    lib.info(f"  profile   {profile}"
+             + ("" if args.keep_profiles else "   (the others are not copied)"))
     lib.info(f"  stack     {', '.join(f'{k}={v}' for k, v in found.stack.items()) or 'not recognised'}")
     lib.info(f"  commands  {', '.join(found.commands) or 'none detected'}"
              + (f"   (from {', '.join(found.sources)})" if found.sources else ""))
     lib.info(f"  areas     {', '.join(a[0] for a in areas) or 'none proposed'}")
 
-    plan = _adopt.scaffold_plan(ROOT, target)
+    plan = _adopt.scaffold_plan(ROOT, target, profile, args.keep_profiles)
     counts = _adopt.apply_plan(plan, args.dry_run)
 
     generated = [
@@ -195,6 +213,13 @@ def adopt(args, profile: str) -> int:
         lib.info("       Merge what you want and delete the rest. Nothing was "
                  "overwritten.")
 
+    if tracked:
+        lib.info(
+            "\n  If you want out: `git clean -nd` lists everything adoption\n"
+            "  added, and `git clean -fd` removes it. That is exact only "
+            "because\n  the tree was clean before this ran."
+        )
+
     lib.info(
         "\n  Next, in " + target.name + ":\n"
         "    1. project.yaml  - fix the proposed areas; they are a guess\n"
@@ -224,7 +249,8 @@ def main() -> int:
     parser.add_argument("--keep-examples", action="store_true",
                         help="do not delete the worked examples")
     parser.add_argument("--keep-profiles", action="store_true",
-                        help="do not delete the profiles you are not using")
+                        help="keep the profiles you are not using (with --adopt, "
+                             "copy them across too)")
     parser.add_argument("--git", action="store_true", help="run git init")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true",

@@ -313,6 +313,12 @@ churn, and never overwrites anything - its versions of existing files land as
 `.proposed`. Then: run the secret scan, fix the proposed areas, and write the
 card for the busiest one.
 
+It refuses on a project that is not under version control, and on one with a
+dirty tree. Both refusals protect the same thing: adoption writes dozens of
+files, and the only reason that is a safe thing to do to somebody's repository
+is that `git clean -nd` can list every one of them afterwards. Where that undo
+does not exist, `git init` first.
+
 **Starting fresh.** `python scripts/init.py`, then declare areas as they emerge.
 Do not invent an area map before there is code in it.
 

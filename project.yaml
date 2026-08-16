@@ -26,6 +26,7 @@ commands:
   check: python scripts/check.py
   test: python tests/invariants.py
   test-hooks: python tests/hooks.py
+  test-adopt: python tests/adopt.py
   usage: python scripts/usage.py
 
 defaults:

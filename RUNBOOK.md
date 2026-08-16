@@ -63,8 +63,16 @@ else does. A couple of seconds.
 python tests/hooks.py
 ```
 
-Both must be green before a commit. A failure in `tests/invariants.py` usually
-means a rule changed without its test, or a rename missed a path.
+The adoption suite. Builds a small throwaway project twelve times and adopts it,
+asserting that nothing pre-existing is edited and that the refusals refuse.
+About 20 seconds.
+
+```bash
+python tests/adopt.py
+```
+
+All three must be green before a commit. A failure in `tests/invariants.py`
+usually means a rule changed without its test, or a rename missed a path.
 
 Useful while working on one rule:
 
