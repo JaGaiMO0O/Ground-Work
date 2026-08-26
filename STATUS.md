@@ -58,9 +58,9 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-08-16 13:03 UTC
-Branch:       main @ 1515915 (2026-08-16), 2 uncommitted change(s)
-              "Fix the three defects the Name Screening adoption found"
+Generated:    2026-08-26 08:41 UTC
+Branch:       main @ 946db3e (2026-08-16), 4 uncommitted change(s)
+              "Record six defects from the JLGC adoption trial"
 Validation:   clean
 Last handoff: 2026-08-16-jlgc-adoption-trial.md
 Areas:        4 declared, 0 with a card

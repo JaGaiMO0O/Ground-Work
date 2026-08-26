@@ -338,6 +338,12 @@ failure this design has.
 **Starting fresh.** `python scripts/init.py`, then declare areas as they emerge.
 Do not invent an area map before there is code in it.
 
+**Neither.** [starter-prompt.md](starter-prompt.md) is a single prompt that
+produces the same structure by hand in any project, with nothing installed. It
+is the right size for work nobody will inherit - and the honest trade is that
+every rule below becomes something you hold to rather than something a script
+holds you to.
+
 **Either way, in order:** secret scan → declare areas → card the busiest area →
 recipes for recurring tasks → the handoff habit.
 

@@ -122,3 +122,7 @@ python scripts/usage.py
 Start with your own numbers. Then read
 [docs/antipatterns.md](docs/antipatterns.md) - it is the shortest useful thing
 here.
+
+Too much scaffolding for what you are doing? [docs/starter-prompt.md](docs/starter-prompt.md)
+is one prompt that lays out the same structure by hand, in any project, with
+none of this installed. You lose the enforcement; you keep the habits.
