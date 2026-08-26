@@ -470,3 +470,126 @@ def runbook(name: str, found: Detected) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# the manifest - what adoption actually wrote
+# ---------------------------------------------------------------------------
+#
+# The undo used to be a sentence telling you to run `git clean -fd`. It was
+# wrong in both directions and it was a safety claim, which is the worst kind of
+# thing to be wrong about: files adoption added SURVIVED it, because the target
+# gitignored them, and directories that predated adoption were DELETED by it,
+# because `git status --porcelain` cannot see an untracked empty directory.
+#
+# Both failures have the same cause. `git clean` is asked what git considers
+# removable; it was never asked what adoption actually did. So adoption now
+# records that, and the undo reads the record.
+
+MANIFEST_NAME = ".adopt-manifest.json"
+
+
+def manifest_path(target: Path) -> Path:
+    return target / MANIFEST_NAME
+
+
+def digest(path: Path) -> str:
+    """Short content hash. Undo deletes a file only if it still matches - so
+    anything edited since adoption is kept, and said so."""
+    import hashlib
+
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+    except OSError:
+        return ""
+
+
+def dirs_that_would_be_created(target: Path, destinations) -> "list[str]":
+    """Directories adoption is about to make, deepest last.
+
+    Must be called BEFORE anything is copied - it works by asking which parents
+    do not exist yet. Recording these is what stops the undo removing an empty
+    directory that was already there.
+    """
+    seen: "list[str]" = []
+    for destination in destinations:
+        chain = []
+        parent = destination.parent
+        while parent != target and target in parent.parents and not parent.exists():
+            chain.append(parent)
+            parent = parent.parent
+        for created in reversed(chain):
+            rel = created.relative_to(target).as_posix()
+            if rel not in seen:
+                seen.append(rel)
+    return seen
+
+
+def write_manifest(target: Path, *, profile: str, added, dirs_created,
+                   gitignore_appended: "str | None",
+                   template_version: str) -> Path:
+    """Record the run. `added` is an iterable of absolute paths under target."""
+    files = {}
+    for path in added:
+        if not path.is_file():
+            continue
+        files[path.relative_to(target).as_posix()] = digest(path)
+
+    payload = {
+        "note": (
+            "Written by init.py --adopt. Lists exactly what adoption added, so "
+            "the undo can be exact: python scripts/init.py --undo <dir>. "
+            "Delete this file if you are keeping the scaffold - the undo is the "
+            "only thing that reads it."
+        ),
+        "template_version": template_version,
+        "profile": profile,
+        "files": files,
+        "dirs_created": list(dirs_created),
+        "gitignore_appended": gitignore_appended,
+    }
+    path = manifest_path(target)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def read_manifest(target: Path) -> "dict | None":
+    path = manifest_path(target)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(_read(path) or "{}")
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) and "files" in data else None
+
+
+def ignored_by_target(target: Path, relatives) -> "list[str]":
+    """Which of these paths the TARGET's git would refuse to clean.
+
+    Asked of the target's git rather than assumed from the block we appended.
+    The JLGC trial found 8 `.claude/**` files surviving the advertised undo
+    because that project gitignores `.claude/` - something no amount of reading
+    our own gitignore block could have revealed.
+    """
+    import subprocess
+
+    if not relatives:
+        return []
+    # -z and bytes, not text mode. A text-mode pipe translates \n to \r\n on the
+    # way IN on Windows, so git received `.claude/README.md\r` and quoted it
+    # back at us as a path containing a control character. Newline translation
+    # has now caused three bugs in this feature alone.
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin", "-z"],
+            cwd=str(target), input="\0".join(relatives).encode("utf-8"),
+            capture_output=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    # exit 0 = some ignored, 1 = none ignored, 128 = not a repo. Only 0 has data.
+    if result.returncode != 0:
+        return []
+    found = result.stdout.decode("utf-8", errors="replace").split("\0")
+    return [name for name in found if name]

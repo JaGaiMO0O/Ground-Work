@@ -315,17 +315,32 @@ card for the busiest one.
 
 It refuses on a project that is not under version control, and on one with a
 dirty tree. Both refusals protect the same thing: adoption writes dozens of
-files, and the only reason that is a safe thing to do to somebody's repository
-is that `git clean -nd` can list them afterwards. Where that undo does not
-exist, `git init` first.
+files into somebody else's repository, and that is only defensible if it can be
+taken back. Where there is no version control to fall back on, `git init` first.
 
-**`git clean` is not the whole undo, and saying it was cost a session.** It
-touches untracked, unignored files only - so it misses the `.gitignore` adoption
-appended to, which is tracked, and it misses `systems/`, which the block it just
-appended made ignored. The success message names both gaps rather than reaching
-for `git clean -fdx`, which would also delete the venv and the `.env`. An undo
-path is a claim, and claims about destructive commands get run before they get
-printed.
+**Backing out: `python scripts/init.py --undo <dir>`.** Adoption records every
+path it wrote, with a hash, in `.adopt-manifest.json`. The undo reads that file
+and removes exactly those paths - keeping anything you have edited since, saying
+which, and restoring `.gitignore` to the bytes it had rather than the bytes git
+thinks it should have. Delete the manifest and adoption is permanent; the undo
+refuses rather than guess which files were ours.
+
+**It reads a manifest because `git clean` was wrong in both directions.** The
+first version of this said `git clean -nd` lists what adoption added and `-fd`
+removes it. Running it proved otherwise: `git clean` touches untracked,
+*unignored* files only, so eight files survived it in a project that gitignores
+`.claude/` - and it deleted three empty directories that predated adoption,
+which `git status --porcelain` cannot see and so the "clean tree" precondition
+could not protect. Reaching for `-fdx` would have covered the first and made the
+second worse, taking the venv and the `.env` with it.
+
+The general lesson is not about git. **Anything adoption claims about a target
+must be derived from that target at runtime**, and the same mistake has now
+appeared four times here: a POSIX path this OS could not resolve, a hook reading
+a root from a payload field that could be absent, a test directory looked for
+only at the repo root, and an undo naming exclusions from *our* gitignore rather
+than the target's. An undo path is a claim, and claims about destructive
+commands get run before they get printed.
 
 **Adoption carries templates, never content.** Once this repo began describing
 itself, the copy step started handing other projects Ground Work's own goal

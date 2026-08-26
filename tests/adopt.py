@@ -25,6 +25,7 @@ there is nothing to copy first.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import stat
@@ -86,6 +87,29 @@ def inventory(target: Path) -> dict:
     return found
 
 
+# Path set per fixture, captured before adoption. Directories included, and
+# that is the point: the old undo deleted three empty ones that predated it,
+# and `git status --porcelain` cannot see an untracked empty directory, so
+# nothing in the git state revealed the loss.
+SNAPSHOTS = {}
+
+
+def paths_of(target: Path) -> "set[str]":
+    found = set()
+    for path in target.rglob("*"):
+        if ".git" in path.parts:
+            continue
+        found.add(path.relative_to(target).as_posix() + ("/" if path.is_dir() else ""))
+    return found
+
+
+def run_init(target: Path, *argv):
+    return subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "init.py"), *argv],
+        cwd=str(target), capture_output=True, text=True,
+    )
+
+
 # --- fixtures --------------------------------------------------------------
 
 
@@ -115,6 +139,7 @@ def make(index: int, *, use_git: bool, commit: bool = True,
         if commit:
             git(target, "add", "-A")
             git(target, "commit", "-qm", "base")
+    SNAPSHOTS[str(target)] = paths_of(target)
     return target
 
 
@@ -134,6 +159,18 @@ def build_dirty(i):
 
 def build_with_agents(i):
     return make(i, use_git=True, extra={"AGENTS.md": "# their router\nMine.\n"})
+
+
+def build_undo_target(i):
+    """The JLGC shape: a gitignored `.claude/`, and empty directories that
+    predate adoption. Those two are what made the old undo wrong in both
+    directions - it left 8 files behind and deleted 3 directories it had never
+    written."""
+    target = make(i, use_git=True, extra={".gitignore": "*.pyc\n.claude/\n"})
+    (target / "emptydir").mkdir(exist_ok=True)
+    (target / ".cursor").mkdir(exist_ok=True)
+    SNAPSHOTS[str(target)] = paths_of(target)
+    return target
 
 
 def build_with_gitignore(i):
@@ -290,20 +327,23 @@ def unfilled_tier0_fails(target, _before, after, out):
 
 
 def undo_is_honest(target, _before, after, out):
-    """Written one session, wrong the same day. `git clean` touches neither a
-    tracked file nor an ignored one, and adoption produces one of each."""
-    if "git clean -nd" not in out:
+    """The message must offer the real undo and say why `git clean` is not it -
+    and the reason must be ASKED of this project, not recited from ours."""
+    if "--undo" not in out:
         return "no undo was offered at all"
-    if "git checkout -- .gitignore" not in out:
+    if ".adopt-manifest.json" not in after:
+        return "no manifest was written, so there is nothing to undo from"
+    if "gitignores" not in out:
+        return "does not say git clean skips the files THIS project ignores"
+    if "Nor would it restore .gitignore" not in out:
         return "does not say .gitignore was MODIFIED, which git clean cannot undo"
-    if "git clean -fdx systems/" not in out:
-        return "does not say systems/ is ignored, so plain -fd skips it"
-    if "Do not reach for a bare" not in out:
-        return "should warn against a bare -fdx, which also eats venvs and .env"
     if not (target / "systems" / ".sync-state.json").is_file():
         return "fixture drift: sync.py no longer writes systems/.sync-state.json"
     if ".sync-state.json" not in out:
         return "systems/.sync-state.json was written and never reported"
+    manifest = json.loads(after[".adopt-manifest.json"].decode())
+    if "systems/.sync-state.json" not in manifest["files"]:
+        return "the manifest omits a file adoption wrote, so the undo will miss it"
     # Found by running the undo instead of reading it. This project ignores
     # *.pyc, so a __pycache__ we left behind is ignored too, and `git clean -fd`
     # walks straight past it - a third thing the message did not cover.
@@ -315,14 +355,71 @@ def undo_is_honest(target, _before, after, out):
 
 def undo_omits_the_gitignore_caveat(target, before, after, out):
     """Positive control on the branch above. With no .gitignore of their own,
-    adoption CREATED one - git clean does remove that, and promising a
-    `git checkout` that would fail is the same class of wrong."""
+    adoption CREATED one - so it is an added file the undo simply deletes, and
+    claiming it must be restored would be the same class of wrong."""
     if ".gitignore" in before:
         return "fixture error: this case needs a project with no .gitignore"
-    if "git checkout -- .gitignore" in out:
-        return "promises a checkout for a .gitignore adoption created, not modified"
-    if "git clean -fdx systems/" not in out:
-        return "the systems/ caveat should still be there"
+    if "Nor would it restore .gitignore" in out:
+        return "promises to restore a .gitignore adoption created, not modified"
+    manifest = json.loads(after[".adopt-manifest.json"].decode())
+    if manifest.get("gitignore_appended") is not None:
+        return "recorded prior .gitignore bytes for a file that did not exist"
+    if ".gitignore" not in manifest["files"]:
+        return "adoption created .gitignore and did not record it as added"
+    return ""
+
+
+def undo_is_exact(target, before, after, _out):
+    """The pass condition the JLGC trial set: the after-undo state equals the
+    before state. Files, directories, and bytes."""
+    expected = SNAPSHOTS[str(target)]
+    if paths_of(target) == expected:
+        return "adoption wrote nothing, so the undo would prove nothing"
+    result = run_init(target, "--undo", str(target))
+    if result.returncode != 0:
+        return "undo exited %d" % result.returncode
+    now = paths_of(target)
+    if now != expected:
+        eaten = sorted(expected - now)
+        if eaten:
+            return "deleted what it never wrote: %s" % eaten[:3]
+        return "left behind: %s" % sorted(now - expected)[:3]
+    after_undo = inventory(target)
+    changed = [k for k, v in before.items() if after_undo.get(k) != v]
+    if changed:
+        return "restored, but not byte-for-byte: %s" % changed
+    return ""
+
+
+def undo_keeps_edited_files(target, _before, _after, _out):
+    """Once you have edited a file adoption wrote, it is your file."""
+    mine = target / "AGENTS.md"
+    if not mine.is_file():
+        return "fixture drift: adoption did not write AGENTS.md"
+    mine.write_text("# my own router\n", encoding="utf-8")
+    result = run_init(target, "--undo", str(target))
+    if result.returncode != 0:
+        return "undo exited %d" % result.returncode
+    if not mine.is_file():
+        return "deleted a file that had been edited since adoption"
+    if mine.read_text(encoding="utf-8") != "# my own router\n":
+        return "kept the file but changed it"
+    if not (target / ".adopt-manifest.json").is_file():
+        return "removed the manifest, the only record of what it kept and why"
+    return ""
+
+
+def undo_refuses_without_manifest(target, _before, _after, _out):
+    """No record, no guessing. Deleting by pattern is how you eat somebody's
+    own AGENTS.md."""
+    before = paths_of(target)
+    result = run_init(target, "--undo", str(target))
+    if result.returncode == 0:
+        return "undid something with no manifest to undo it from"
+    if "nothing to" not in (result.stdout + result.stderr):
+        return "refused without saying why"
+    if paths_of(target) != before:
+        return "refused and still changed the tree"
     return ""
 
 
@@ -358,6 +455,10 @@ CASES = [
     ("unfilled Tier 0 is an error",     build_git,        [],                                    1, unfilled_tier0_fails),
     ("undo names what it misses",       build_with_gitignore, FILLED,                            0, undo_is_honest),
     ("no .gitignore -> no caveat [+]",  build_git,        FILLED,                                0, undo_omits_the_gitignore_caveat),
+    # the undo itself, run rather than read
+    ("undo restores exactly     [+]",   build_undo_target, FILLED,                               0, undo_is_exact),
+    ("undo keeps edited files   [+]",   build_git,        FILLED,                                0, undo_keeps_edited_files),
+    ("undo refuses with no record",     build_git,        ["--help"],                            0, undo_refuses_without_manifest),
 ]
 
 

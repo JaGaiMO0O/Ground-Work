@@ -9,6 +9,8 @@ clears away the parts you are not using.
         --purpose "Ship the new checkout flow" \
         --done "checkout is live and the old flow is deleted"
     python scripts/init.py --dry-run
+    python scripts/init.py --adopt ../their-repo     # into a project that exists
+    python scripts/init.py --undo   ../their-repo    # and back out again
 
 Read the worked examples under profiles/*/examples/ BEFORE running this - they
 are removed at the end, and they are the fastest way to learn the card format.
@@ -149,6 +151,30 @@ integration/fixtures/**/raw/
 """
 
 
+def read_exact(path: Path) -> "str | None":
+    """Read without newline translation, or None if absent.
+
+    `read_text`/`write_text` translate line endings on Windows, so a round trip
+    through them turns an LF file into a CRLF one. That is fine for a file we
+    are writing fresh and fatal for one we have promised to restore byte for
+    byte - it is the same trap as `git checkout --` under core.autocrlf, which
+    is how the old undo failed.
+    """
+    if not path.is_file():
+        return None
+    try:
+        with path.open(encoding="utf-8", errors="surrogateescape", newline="") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def write_exact(path: Path, text: str) -> None:
+    with path.open("w", encoding="utf-8", errors="surrogateescape",
+                   newline="") as f:
+        f.write(text)
+
+
 def merge_gitignore(target: Path, dry_run: bool) -> "tuple[str, str]":
     """Append what we need, never rewrite what is there.
 
@@ -245,6 +271,12 @@ def adopt(args, profile: str) -> int:
     lib.info(f"  areas     {', '.join(a[0] for a in areas) or 'none proposed'}")
 
     plan = _adopt.scaffold_plan(ROOT, target, profile, args.keep_profiles)
+    # Before anything is copied, while "does this directory exist?" still has
+    # the pre-adoption answer. The undo removes only directories in this list,
+    # which is what stops it deleting an empty one that was already there.
+    dirs_created = _adopt.dirs_that_would_be_created(
+        target, [_adopt.final_path(d, a) for _s, d, a in plan if a != "skip"]
+    )
     counts = _adopt.apply_plan(plan, args.dry_run)
 
     generated = [
@@ -257,6 +289,11 @@ def adopt(args, profile: str) -> int:
     else:
         generated.append((target / "STATUS.md", status_text))
 
+    # Every path this run wrote, for the manifest the undo reads. Collected as
+    # we go rather than reconstructed afterwards - a reconstruction is another
+    # assumption about the target, and those are what made the old undo untrue.
+    written = [_adopt.final_path(d, a) for _s, d, a in plan if a != "skip"]
+
     lib.info("")
     for path, text in generated:
         verb = "would write" if args.dry_run else "wrote"
@@ -268,10 +305,23 @@ def adopt(args, profile: str) -> int:
             note = f"{verb} {path.name}"
         if not args.dry_run:
             final.write_text(text, encoding="utf-8")
+        written.append(final)
         lib.ok(note)
 
+    # Keep the original bytes, not the block we appended. `git checkout --
+    # .gitignore` does not byte-restore under core.autocrlf - it came back CRLF
+    # where the working tree had been LF - and reconstructing by stripping a
+    # suffix loses whatever trailing whitespace was there. A .gitignore is small
+    # enough to just keep.
+    gitignore_file = target / ".gitignore"
+    gitignore_before = read_exact(gitignore_file)
     gitignore_outcome, gitignore_note = merge_gitignore(target, args.dry_run)
     lib.ok(f".gitignore: {gitignore_note}")
+    if gitignore_outcome == "created":
+        written.append(gitignore_file)
+        gitignore_before = None
+    elif gitignore_outcome == "unchanged":
+        gitignore_before = None
 
     # Everything we run inside the target runs without bytecode. A __pycache__
     # left under scripts/ survives `git clean -fd` in any project that ignores
@@ -287,12 +337,16 @@ def adopt(args, profile: str) -> int:
             cwd=str(target), capture_output=True, env=quiet_env,
         )
         lib.ok(".rgignore generated from the detected areas")
-        # sync.py also creates this, and it is invisible to the undo below - so
-        # report it. An adoption that writes a file it does not name is exactly
-        # how the undo instructions came to be wrong.
+        written.append(target / ".rgignore")
+        # sync.py also creates these, and they used to be invisible to the undo.
+        # An adoption that writes a file it does not record is exactly how the
+        # undo instructions came to be wrong.
         if (target / "systems" / ".sync-state.json").is_file():
             lib.ok("systems/.sync-state.json created (empty - nothing to check "
                    "out yet)")
+            written.append(target / "systems" / ".sync-state.json")
+            if "systems" not in dirs_created:
+                dirs_created.append("systems")
     lib.ok(f"scaffold: {counts['add']} added, {counts['proposed']} proposed "
            f"alongside existing files, {counts['skip']} already present")
 
@@ -323,31 +377,40 @@ def adopt(args, profile: str) -> int:
         lib.info("       Merge what you want and delete the rest. Nothing was "
                  "overwritten.")
 
+    manifest = _adopt.write_manifest(
+        target, profile=profile, added=written, dirs_created=dirs_created,
+        gitignore_appended=gitignore_before,
+        template_version=template_version(),
+    )
+    lib.ok(f"{manifest.name} records exactly what this run wrote")
+
+    # The undo used to be "git clean -nd lists it, -fd removes it". It was
+    # written once and disproved the same day by running it: git clean touches
+    # only UNTRACKED, UNIGNORED files, and adoption produces one of each kind it
+    # misses. Reaching for -fdx would have covered both and deleted the venv and
+    # the .env with them. So the undo now reads the manifest instead of asking
+    # git what it thinks is disposable.
+    lines = [
+        "\n  If you want out:",
+        f"       python scripts/init.py --undo {target.name}",
+        f"  It reads {manifest.name} and removes exactly what this run wrote,",
+        "  keeping anything you have edited since and saying which.",
+    ]
     if tracked:
-        # Written once as "-nd lists everything, -fd removes it" and wrong the
-        # same day. git clean only ever touches UNTRACKED, UNIGNORED files, and
-        # adoption produces one of each kind it misses. The honest version names
-        # what it does not cover rather than reaching for -fdx, which would also
-        # delete the venv, the .env and every other ignored file worth keeping.
-        lines = [
-            "\n  If you want out:",
-            "       git clean -nd      lists the files adoption ADDED",
-            "       git clean -fd      removes them",
-            "  Exact only because the tree was clean before this ran. What that",
-            "  does NOT cover:",
-        ]
-        if gitignore_outcome == "modified":
+        ignored = _adopt.ignored_by_target(
+            target, [p.relative_to(target).as_posix() for p in written]
+        )
+        if ignored:
             lines += [
-                "    - .gitignore was MODIFIED, not added, and git clean never",
-                "      touches a tracked file:  git checkout -- .gitignore",
+                f"  `git clean -fd` is NOT equivalent: this project gitignores",
+                f"  {len(ignored)} of the files adoption just wrote, including",
+                f"  {ignored[0]}, and git clean never touches an ignored file.",
             ]
-        lines += [
-            "    - systems/ is ignored by the .gitignore block above, so plain",
-            "      -fd skips it:  git clean -fdx systems/",
-            "  Do not reach for a bare `git clean -fdx` to cover both. It would",
-            "  also delete your venv, your .env, and everything else ignored.",
-        ]
-        lib.info("\n".join(lines))
+        if gitignore_outcome == "modified":
+            lines.append(
+                "  Nor would it restore .gitignore, which was modified, not added."
+            )
+    lib.info("\n".join(lines))
 
     steps = [
         "AGENTS.md      - fill in the purpose and done lines; it is read every turn"
@@ -380,11 +443,114 @@ def adopt(args, profile: str) -> int:
     return 1 if code == 1 else 0
 
 
+def template_version() -> str:
+    """Which Ground Work wrote this. ADR 0003 keeps a copy per project, which is
+    only honest if the copy can say how old it is."""
+    result = lib.git("rev-parse", "--short", "HEAD", cwd=ROOT)
+    if result.returncode == 0 and result.stdout.strip():
+        return result.stdout.strip()
+    return "unknown"
+
+
+def undo(args) -> int:
+    """Remove exactly what an adoption wrote, reading its own record.
+
+    Never guesses. A file whose contents no longer match what adoption wrote is
+    kept and reported - by then it is your file, not ours. Directories are
+    removed only if adoption created them, which is what stops this deleting an
+    empty directory that was already there.
+    """
+    import _adopt
+
+    target = Path(args.undo).resolve()
+    if not target.is_dir():
+        return lib.die(f"{target} is not a directory")
+
+    data = _adopt.read_manifest(target)
+    if data is None:
+        return lib.die(
+            f"no {_adopt.MANIFEST_NAME} in {target.name}, so there is nothing to"
+            " undo from.\n"
+            "     Either this project was never adopted, or the manifest was\n"
+            "     deleted - which is how you tell adoption you are keeping it.\n"
+            "     Removing the scaffold by hand from here is the only option,\n"
+            "     and this refuses rather than guess which files were ours."
+        )
+
+    files = data.get("files") or {}
+    removed, kept, already_gone = [], [], []
+    for rel, recorded in sorted(files.items()):
+        path = target / rel
+        if not path.is_file():
+            already_gone.append(rel)
+            continue
+        if _adopt.digest(path) != recorded:
+            kept.append(rel)
+            continue
+        if not args.dry_run:
+            try:
+                path.unlink()
+            except OSError:
+                kept.append(rel)
+                continue
+        removed.append(rel)
+
+    # Deepest first, or a parent is never empty when its turn comes.
+    pruned = []
+    for rel in sorted(data.get("dirs_created") or [],
+                      key=lambda r: r.count("/"), reverse=True):
+        folder = target / rel
+        if not folder.is_dir():
+            continue
+        if any(folder.iterdir()):
+            continue
+        if not args.dry_run:
+            try:
+                folder.rmdir()
+            except OSError:
+                continue
+        pruned.append(rel)
+
+    restored = False
+    before = data.get("gitignore_appended")
+    if isinstance(before, str):
+        if not args.dry_run:
+            write_exact(target / ".gitignore", before)
+        restored = True
+
+    verb = "would remove" if args.dry_run else "removed"
+    lib.ok(f"{verb} {len(removed)} file(s) and {len(pruned)} directory(ies)")
+    if restored:
+        lib.ok(f"{'would restore' if args.dry_run else 'restored'} .gitignore to"
+               " the bytes it had before adoption")
+    if already_gone:
+        lib.info(f"       {len(already_gone)} were already gone")
+    if kept:
+        lib.warn(f"kept {len(kept)} file(s) you have edited since adoption")
+        for rel in kept[:8]:
+            lib.info(f"       {rel}")
+        lib.info("       Delete them yourself if you meant to. This will not "
+                 "throw away your work.")
+
+    if args.dry_run:
+        lib.info("\n  dry run - nothing was removed\n")
+        return 0
+
+    if kept:
+        lib.info(f"       {_adopt.MANIFEST_NAME} kept, because it is the only "
+                 "record of what those were.")
+    else:
+        _adopt.manifest_path(target).unlink(missing_ok=True)
+    return 0
+
+
 def main() -> int:
     profiles = available_profiles()
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--adopt", metavar="DIR",
                         help="bring the scaffold into an existing project")
+    parser.add_argument("--undo", metavar="DIR",
+                        help="remove what --adopt wrote, from its own manifest")
     parser.add_argument("--project")
     parser.add_argument("--profile", choices=profiles or None)
     parser.add_argument("--purpose")
@@ -405,6 +571,9 @@ def main() -> int:
         return lib.die("AGENTS.md not found - run this from the project root")
     if not profiles:
         return lib.die("no profiles/ directory - the template is incomplete")
+
+    if args.undo:
+        return undo(args)
 
     if args.adopt:
         return adopt(args, args.profile or "general")

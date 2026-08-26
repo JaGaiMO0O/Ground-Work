@@ -49,7 +49,7 @@ that is correct; `init.py` fills it.
 
 ## Test
 
-The invariant suite. Copies the repo to a temp directory 35 times, breaks one
+The invariant suite. Copies the repo to a temp directory 39 times, breaks one
 rule in each copy, and asserts `check.py` notices. Takes about 45 seconds.
 
 ```bash
@@ -63,9 +63,9 @@ else does. A couple of seconds.
 python tests/hooks.py
 ```
 
-The adoption suite. Builds a small throwaway project twelve times and adopts it,
-asserting that nothing pre-existing is edited and that the refusals refuse.
-About 20 seconds.
+The adoption suite. Builds a small throwaway project twenty-one times and adopts
+it, asserting that nothing pre-existing is edited, that the refusals refuse, and
+that the undo puts the project back byte for byte. About 40 seconds.
 
 ```bash
 python tests/adopt.py
@@ -107,6 +107,18 @@ existing project is the other path worth exercising:
 ```bash
 python scripts/init.py --adopt /path/to/some/other/repo --dry-run
 ```
+
+Without `--dry-run` it writes, and records what it wrote in
+`.adopt-manifest.json`. To back out:
+
+```bash
+python scripts/init.py --undo /path/to/some/other/repo
+```
+
+That removes exactly what adoption wrote and keeps anything edited since. Do
+not reach for `git clean` instead - it skips whatever the target gitignores and
+deletes empty directories it never created, which is how the first version of
+this instruction came to be wrong.
 
 ---
 
