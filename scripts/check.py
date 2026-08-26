@@ -528,7 +528,10 @@ def check_runbook(ctx: Ctx) -> None:
         if executable in ("python", "python3", sys.executable):
             continue
         if lib.which(executable) is None:
-            hint = commands.get("install")
+            # "try: pip install -r requirements.txt" is useless advice when the
+            # command that needs pip IS that install command. Suggest the
+            # install step only to the commands that come after it.
+            hint = None if name == "install" else commands.get("install")
             note(
                 f"'{name}' command needs {executable!r}, which is not on PATH"
                 + (f" - try: {hint}" if hint else "")

@@ -200,6 +200,18 @@ def merge_gitignore(target: Path, dry_run: bool) -> "tuple[str, str]":
     return outcome, f"{outcome}, appended {len(missing)} entry(ies)"
 
 
+def slugify(text: str) -> str:
+    """A directory name, made fit for line 1 of AGENTS.md.
+
+    `JLGC - Copy` used to become `jlgc---copy`, because only spaces were
+    replaced and each separator became its own dash. Tier 0 is the file every
+    session reads first, so a name that looks like a typo is read several
+    hundred times.
+    """
+    cleaned = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return cleaned or "project"
+
+
 def adopt(args, profile: str) -> int:
     """Bring the scaffold into a repository that already exists."""
     import _adopt
@@ -245,7 +257,7 @@ def adopt(args, profile: str) -> int:
 
     found = _adopt.detect(target)
     areas = _adopt.propose_areas(target)
-    name = args.project or target.name.lower().replace(" ", "-")
+    name = args.project or slugify(target.name)
 
     # AGENTS.md is Tier 0 - the router, loaded on every turn. Plain init has
     # always filled it in; adopt never did, so every adopted project opened with

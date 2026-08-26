@@ -33,6 +33,14 @@ session history and tells you what you have been paying for.
 python scripts/usage.py
 ```
 
+On a project you have not used an agent in yet, it will say *no readable session
+telemetry* - correct, and not a failure. Ask it about every project on your
+machine instead, which is where the interesting numbers are anyway:
+
+```bash
+python scripts/usage.py --all
+```
+
 **Check the project is in good shape.** Run before you finish anything. It says
 what is wrong and how to fix it.
 
@@ -116,7 +124,7 @@ regenerates. In each of those the change would have been lost or harmful anyway.
 ## Next
 
 ```bash
-python scripts/usage.py
+python scripts/usage.py --all
 ```
 
 Start with your own numbers. Then read

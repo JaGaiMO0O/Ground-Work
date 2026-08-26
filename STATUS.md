@@ -1,6 +1,6 @@
 ---
 phase: v1-complete
-reviewed: 2026-08-16
+reviewed: 2026-08-26
 ---
 
 # Status
@@ -61,9 +61,9 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-08-26 09:04 UTC
-Branch:       main @ e5d2a96 (2026-08-26), 7 uncommitted change(s)
-              "Add a starter prompt for people who want the habits, not the scaffold"
+Generated:    2026-08-26 09:18 UTC
+Branch:       main @ 0d51a05 (2026-08-26), 5 uncommitted change(s)
+              "Replace the adoption undo with a manifest it cannot get wrong"
 Validation:   clean
 Last handoff: 2026-08-26-adoption-undo-by-manifest.md
 Areas:        4 declared, 0 with a card

@@ -166,7 +166,14 @@ def seed_initialised():
     status = WORK / "STATUS.md"
     if template.is_file():
         text = template.read_text(encoding="utf-8")
-        text = text.replace("reviewed: <date>", "reviewed: 2026-08-03")
+        # Today, not a fixed date. A hardcoded one silently rots: the
+        # staleness rule compares it against the newest handoff, so every
+        # clean-baseline case started failing the day the repo wrote a
+        # handoff three weeks newer than the fixture. The rule was right.
+        from datetime import date
+
+        text = text.replace("reviewed: <date>",
+                            f"reviewed: {date.today().isoformat()}")
         text = text.replace(
             "<what this phase is for, in one line>", "keep the harness honest"
         )
@@ -443,8 +450,17 @@ def m_status_template_gone():
 
 def m_status_goals_stale():
     setup()
-    # A handoff 29 days after the goals were last reviewed.
-    write("context/handoffs/2026-09-01-later-work.md", "# Handoff\n\nNext: something\n")
+    # Both dates stated here, relative to each other. This case used to lean on
+    # seed_status()'s hardcoded review date already being old enough - so it
+    # passed only for as long as that stayed true, and the positive controls
+    # broke the day the repo wrote a handoff three weeks newer than it.
+    from datetime import date, timedelta
+
+    patch("STATUS.md", f"reviewed: {date.today().isoformat()}",
+          f"reviewed: {(date.today() - timedelta(days=40)).isoformat()}")
+    stamp = (date.today() - timedelta(days=1)).isoformat()
+    write(f"context/handoffs/{stamp}-later-work.md",
+          "# Handoff\n\nNext: something\n")
 
 
 def m_runbook_missing_command():
