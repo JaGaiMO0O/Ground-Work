@@ -1,11 +1,62 @@
-# <PROJECT_NAME>
+# Ground Work
 
-Structure for working on this project with AI agents: cheaply, reproducibly, and
-in a way somebody else can pick up.
+Structure for working on a project with AI agents: cheaply, reproducibly, and in
+a way somebody else can pick up.
+
+> **You are an agent?** Your entry point is [AGENTS.md](AGENTS.md).
+
+---
+
+<!-- TEMPLATE ONLY - init.py deletes from here to the END marker. These
+     are instructions for obtaining the template, which stop being true
+     the moment you are the project rather than a copy of it. -->
+
+## Get it
+
+You need **Python 3.8+** and **git**. That is the whole requirement - no install
+step, no dependencies, no virtualenv.
+
+**Starting something new?** Take a copy and make it yours:
+
+```bash
+git clone https://github.com/JaGaiMO0O/Ground-Work.git my-project
+cd my-project
+rm -rf .git && git init
+python scripts/init.py
+```
+
+That third line matters: without it your project's history is *this* repo's
+history and your `origin` points here, so a push would land on somebody else's
+repository. On PowerShell it is `Remove-Item -Recurse -Force .git; git init`.
+
+`init.py` asks two questions - what the project is for, and how you will know it
+is finished - then fills in the placeholders and deletes the parts you are not
+using. **Then read [START-HERE.md](START-HERE.md).** Five minutes, four commands,
+and it is the whole onboarding.
+
+**Already have a project?** Bring the scaffold into it instead:
+
+```bash
+git clone https://github.com/JaGaiMO0O/Ground-Work.git
+cd Ground-Work
+python scripts/init.py --adopt /path/to/your/project --dry-run
+```
+
+Drop `--dry-run` once the plan looks right. Your project has to be a git
+repository with a clean tree; adoption refuses otherwise, because it writes
+around fifty files and that is only a reasonable thing to do to somebody's
+repository if they can take it back. Taking it back:
+
+```bash
+python scripts/init.py --undo /path/to/your/project
+```
+
+That removes exactly what adoption wrote, from a manifest it recorded at the
+time, and keeps anything you have edited since.
+
+<!-- END TEMPLATE ONLY -->
 
 > **New here?** [START-HERE.md](START-HERE.md) - five minutes, four commands.
->
-> **You are an agent?** Your entry point is [AGENTS.md](AGENTS.md).
 
 ---
 

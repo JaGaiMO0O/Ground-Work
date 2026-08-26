@@ -632,8 +632,22 @@ def main() -> int:
     edits.append((AGENTS, personalized_agents(
         AGENTS.read_text(encoding="utf-8"), project, purpose, done, db_role)))
 
-    edits.append((README, README.read_text(encoding="utf-8")
-                  .replace(PROJECT_TOKEN, project)))
+    # Set the H1 rather than substituting a token, the way `profile:` below
+    # already is. README.md is what GitHub renders, so it is the first thing
+    # anyone sent a link sees - and `# <PROJECT_NAME>` at the top of that page
+    # reads as an abandoned repo before a word of it is read. The template
+    # therefore carries a real title, and init replaces the line.
+    # A lambda, because re.sub reads backslashes in a replacement string and a
+    # project name can contain them.
+    readme_text = README.read_text(encoding="utf-8")
+    # How to obtain the template stops being true the moment you ARE the
+    # project. Left in, every repo made from this would tell its readers to go
+    # and clone somebody else's.
+    readme_text = re.sub(
+        r"<!-- TEMPLATE ONLY.*?<!-- END TEMPLATE ONLY -->\s*", "",
+        readme_text, flags=re.S)
+    edits.append((README, re.sub(
+        r"^# .*$", lambda _m: f"# {project}", readme_text, count=1, flags=re.M)))
 
     project_text = PROJECT.read_text(encoding="utf-8").replace(PROJECT_TOKEN, project)
     # Set the line rather than substituting the token, the way `profile:`
