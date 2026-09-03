@@ -253,6 +253,27 @@ def legacy_overlay(target, _before, after, _out):
     return ""
 
 
+def no_template_only_files_travel(target, _before, after, _out):
+    """LICENSE, TESTING.md and .gitlab/ describe the TEMPLATE, not a project
+    made from it.
+
+    LICENSE is the one with teeth: it is Optimiza's licence over the scaffold,
+    so copying it into somebody's repository would put that notice over their
+    own work - and its own text says a scaffolded project is theirs. The other
+    two would send the adopter a testing brief for a build they are not
+    testing.
+    """
+    for unwanted, why in (
+        ("LICENSE", "the scaffold's licence, over the adopter's own work"),
+        ("TESTING.md", "a testing brief for the scaffold, not their project"),
+        (".gitlab/", "issue templates pointing at somebody else's tracker"),
+    ):
+        hit = [k for k in after if k == unwanted or k.startswith(unwanted)]
+        if hit:
+            return f"copied {why}: {hit[:2]}"
+    return ""
+
+
 def carries_only_what_runs(target, _before, after, _out):
     """ADR 0003: copying rather than installing is only defensible if it copies
     what the project will actually invoke."""
@@ -449,6 +470,7 @@ CASES = [
     ("legacy scaffold reaches root",    build_git,        FILLED + ["--profile", LEGACY_PROFILE], 0, legacy_overlay),
     ("one-file directory is an area",   build_git,        FILLED,                                0, app_is_an_area),
     ("carries only what it runs",       build_git,        FILLED,                                0, carries_only_what_runs),
+    ("no template-only files travel",   build_git,        FILLED,                                0, no_template_only_files_travel),
     # the three defects the Name Screening adoption found
     ("no live content travels",         build_git,        FILLED,                                0, no_live_content),
     ("router arrives personalized",     build_git,        FILLED,                                0, agents_personalized),

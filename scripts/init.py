@@ -35,6 +35,17 @@ PROJECT = ROOT / "project.yaml"
 STATUS = ROOT / "STATUS.md"
 STATUS_TEMPLATE = ROOT / "STATUS.template.md"
 
+# Files that describe the TEMPLATE and stop being true the moment this becomes
+# somebody's project. Deleted by init, the same way README's "how to obtain
+# this" block is stripped rather than inherited.
+#
+# LICENSE is the one that matters: it is Optimiza's licence over the scaffold,
+# and leaving it in place would put that notice over the user's own work. Its
+# own text says a scaffolded project is theirs, so the file has to go for the
+# file to be honest. --adopt never copies these; only this path could.
+TEMPLATE_ONLY_FILES = ("LICENSE", "TESTING.md")
+TEMPLATE_ONLY_DIRS = (".gitlab",)
+
 PROJECT_TOKEN = "<PROJECT_NAME>"
 PURPOSE_RE = re.compile(r"<ONE SENTENCE[^>]*for>")
 DONE_RE = re.compile(r"<ONE SENTENCE[^>]*finished>")
@@ -52,6 +63,18 @@ STATUS_PURPOSE_TOKEN = "<what this phase is for, in one line>"
 STATUS_DONE_TOKEN = (
     "<the condition that ends this phase - be specific enough to disagree with>"
 )
+
+
+def template_only_paths() -> "list[str]":
+    """Template-describing paths present in this tree, for init to delete.
+
+    Returned rather than assumed so the dry run and the real run cannot
+    disagree - the defect that made the old undo message name `systems/` from
+    a hardcoded list instead of asking the tree.
+    """
+    found = [n for n in TEMPLATE_ONLY_FILES if (ROOT / n).is_file()]
+    found += [f"{n}/" for n in TEMPLATE_ONLY_DIRS if (ROOT / n).is_dir()]
+    return found
 
 
 def available_profiles() -> "list[str]":
@@ -693,6 +716,8 @@ def main() -> int:
                 lib.info(f"       would delete  {d.relative_to(ROOT).as_posix()}/")
         if not args.keep_profiles and unused:
             lib.info(f"       would delete  unused profiles: {', '.join(unused)}")
+        for name in template_only_paths():
+            lib.info(f"       would delete  {name}")
         if args.git:
             lib.info("       would run git init")
         return 0
@@ -721,6 +746,18 @@ def main() -> int:
         lib.ok(f"removed unused profile(s): {', '.join(unused)}")
         lib.info("       To switch profiles later, copy the directory back from "
                  "the template.")
+
+    dropped = template_only_paths()
+    for name in dropped:
+        path = ROOT / name
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            path.unlink(missing_ok=True)
+    if dropped:
+        lib.ok(f"removed template-only file(s): {', '.join(dropped)}")
+        lib.info("       They described the template. This is a project now, so "
+                 "licence and testing brief are yours to write.")
 
     # The scaffold is now part of the project, not a pending overlay.
     scaffold_root = lib.PROFILES_DIR / profile / "scaffold"

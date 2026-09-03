@@ -63,7 +63,7 @@ else does. A couple of seconds.
 python tests/hooks.py
 ```
 
-The adoption suite. Builds a small throwaway project twenty-one times and adopts
+The adoption suite. Builds a small throwaway project twenty-two times and adopts
 it, asserting that nothing pre-existing is edited, that the refusals refuse, and
 that the undo puts the project back byte for byte. About 40 seconds.
 

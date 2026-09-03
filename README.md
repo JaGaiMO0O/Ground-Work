@@ -54,6 +54,29 @@ python scripts/init.py --undo /path/to/your/project
 That removes exactly what adoption wrote, from a manifest it recorded at the
 time, and keeps anything you have edited since.
 
+## Testing this build
+
+This is **build 0A** - version 0, alpha, and the first build handed to anyone
+outside its author. If you are one of the internal testers,
+**[TESTING.md](TESTING.md)** is your brief: what to exercise, what a correct
+result looks like, and how to file what you find.
+
+File findings as issues on this repository:
+<https://gitlab.optimizasolutions.com/myaghmour/ground-works/-/issues>. The
+**Bug** template loads automatically. Check *Open defects* in
+[RUNBOOK.md](RUNBOOK.md) first - two are already known.
+
+## License
+
+Proprietary. Copyright (c) 2026 Optimiza Solutions, all rights reserved -
+see [LICENSE](LICENSE). Authorised testers may run it and adopt it into their
+own repositories; redistribution and disclosure outside Optimiza are not
+permitted.
+
+A project you scaffold with `init.py` is yours: `init.py` deletes this
+licence, `TESTING.md` and `.gitlab/` on the way out, because all three describe
+the template rather than your work.
+
 <!-- END TEMPLATE ONLY -->
 
 > **New here?** [START-HERE.md](START-HERE.md) - five minutes, four commands.
@@ -147,13 +170,3 @@ fiction.
 Decisions with trade-offs go in `docs/decisions/` as ADRs, which are immutable
 and superseded rather than edited. The record of why something was once right is
 the point.
-
-## License
-
-Proprietary. Copyright (c) 2026 Optimiza Solutions, all rights reserved -
-see [LICENSE](LICENSE). Authorised testers may run it and adopt it into their
-own repositories; redistribution and disclosure outside Optimiza are not
-permitted.
-
-A project you scaffold with `init.py` is yours. The licence covers this
-scaffold and its tooling, not your work.
