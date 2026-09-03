@@ -64,12 +64,12 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-09-03 09:57 UTC
-Branch:       main @ 905a543 (2026-09-03), 2 uncommitted change(s)
-              "docs(testing): add tester brief and GitLab issue templates"
+Generated:    2026-09-03 10:18 UTC
+Branch:       main @ 26736e3 (2026-09-03), 2 uncommitted change(s)
+              "docs(handoff): record build 0A tester handover - Fill the handoff ske..."
 Validation:   clean
 Last handoff: 2026-09-03-build-0a-tester-handover.md
-              Next: 1. Get the Jira project key, then repoint `TESTING.md` and `README.md...
+              Next: 1. Authorize the Atlassian MCP (installed, not yet authorized - OAuth...
 Areas:        4 declared, 0 with a card
 Budget:       cache 97%; peak context 695k; orientation 11%   -> python scripts/usage.py
 

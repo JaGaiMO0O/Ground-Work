@@ -32,7 +32,12 @@ form.
 
 Next:
 
-1. Get the Jira project key, then repoint `TESTING.md` and `README.md`, delete
-   `.gitlab/`, and drop `.gitlab` from `init.py` and `tests/adopt.py`.
-2. Re-run all three suites, move the `build-0A` tag, push `main` and the tag.
-3. Then the two open JLGC defects, or hand over and stop fixing.
+1. Authorize the Atlassian MCP (installed, not yet authorized - OAuth needs an
+   interactive session), then ask it which Jira project these belong in rather
+   than guessing a key. Check whether the testers hold Jira seats at all: it is
+   licensed per user, and unlicensed testers need a Service Management portal
+   instead of a project.
+2. With the key: repoint `TESTING.md` and `README.md`, delete `.gitlab/`, and
+   drop `.gitlab` from `init.py` and `tests/adopt.py`.
+3. Re-run all three suites, move the `build-0A` tag, push `main` and the tag.
+4. Then the two open JLGC defects, or hand over and stop fixing.
