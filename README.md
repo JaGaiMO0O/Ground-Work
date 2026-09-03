@@ -147,3 +147,13 @@ fiction.
 Decisions with trade-offs go in `docs/decisions/` as ADRs, which are immutable
 and superseded rather than edited. The record of why something was once right is
 the point.
+
+## License
+
+Proprietary. Copyright (c) 2026 Optimiza Solutions, all rights reserved -
+see [LICENSE](LICENSE). Authorised testers may run it and adopt it into their
+own repositories; redistribution and disclosure outside Optimiza are not
+permitted.
+
+A project you scaffold with `init.py` is yours. The licence covers this
+scaffold and its tooling, not your work.

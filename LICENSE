@@ -1,0 +1,40 @@
+Copyright (c) 2026 Optimiza Solutions. All rights reserved.
+
+This software and its documentation are proprietary and confidential.
+
+PERMITTED USE
+
+Permission is granted to individuals expressly authorised by Optimiza
+Solutions to use this software for the purpose of internal evaluation and
+testing. That permission includes running the software, adopting it into
+repositories under your control, and reporting on the results.
+
+Nothing else is permitted. In particular, without prior written permission
+from Optimiza Solutions you may not:
+
+  - distribute, publish, sublicense or sell this software, in whole or in
+    part, in source or compiled form;
+  - disclose it, or any part of it, to anyone outside Optimiza Solutions;
+  - create or distribute derivative works based on it;
+  - remove or alter this notice.
+
+A project scaffolded from this software - the files that `scripts/init.py`
+writes into your own repository - is yours. This notice covers the scaffold
+and its tooling, not the work you do with it.
+
+NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+This is an alpha build. It writes files into repositories you point it at.
+Read `RUNBOOK.md` before running it against anything you care about, and note
+that adoption refuses to run against a repository with a dirty git tree
+precisely so that you can always take it back.
+
+Questions about permitted use: myaghmour@optimizasolutions.com
