@@ -136,6 +136,35 @@ this instruction came to be wrong.
   guard's thresholds. Adapter credentials live in `.env`, which is gitignored;
   `.env.example` documents the names. Never the values.
 
+## Open defects
+
+Found, reproduced, and not yet fixed. **Check this list before reporting
+anything** - what is here is known, so your time is better spent on what is
+not. Quote the build (`build-0A`) in any report.
+
+Both of these were found by the JLGC adoption trial on 2026-08-16; the full
+write-up, including causes and the files involved, is in
+`context/handoffs/2026-08-16-jlgc-adoption-trial.md` as defects 3 and 6.
+
+- **Adoption misses the test command on some Python layouts.** The adopted
+  `RUNBOOK.md` lands with `# TODO: how do you test this?` even where tests
+  plainly exist. Triggers when a root `requirements.txt` only re-exports another
+  file (`-r backend/requirements.txt`), or when `tests/` sits below the repo
+  root rather than at it. Workaround: fill the command in by hand. It is a
+  detection gap, not a wrong answer.
+- **`scan.py` reports `*_TOKEN` constants as secrets.** Any identifier ending in
+  `token`, `secret` or `key` assigned at the start of a line matches the
+  `password-property` rule, so ordinary Python like
+  `_NUMERIC_TOKEN = re.compile(` is recorded as a finding. Low volume - 1 hit in
+  3,287 files on the trial - and the captured "secret" is visibly not one. Not a
+  reason to distrust a real hit.
+
+Neither risks data. Adoption's safety claims are the most-tested part of this:
+three trials with 0 pre-existing files modified, and `tests/adopt.py` asserts
+the undo restores the target byte for byte.
+
+Delete an entry from this list when it is fixed, not when it is understood.
+
 ## Known rough edges
 
 - **`tests/invariants.py` is slow** (~45s) because each case copies the whole

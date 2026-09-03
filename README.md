@@ -19,7 +19,7 @@ step, no dependencies, no virtualenv.
 **Starting something new?** Take a copy and make it yours:
 
 ```bash
-git clone https://github.com/JaGaiMO0O/Ground-Work.git my-project
+git clone https://gitlab.optimizasolutions.com/myaghmour/ground-works.git my-project
 cd my-project
 rm -rf .git && git init
 python scripts/init.py
@@ -37,8 +37,8 @@ and it is the whole onboarding.
 **Already have a project?** Bring the scaffold into it instead:
 
 ```bash
-git clone https://github.com/JaGaiMO0O/Ground-Work.git
-cd Ground-Work
+git clone https://gitlab.optimizasolutions.com/myaghmour/ground-works.git
+cd ground-works
 python scripts/init.py --adopt /path/to/your/project --dry-run
 ```
 
@@ -82,7 +82,7 @@ That single change does most of the work. The rest of this repo protects it.
 | Path | Holds | Answers |
 |---|---|---|
 | `AGENTS.md` | the router, loaded every turn, deliberately small | where is everything? |
-| `STATUS.md` | state: phase, goals, blockers | where are we now? |
+| `STATUS.md` | state: phase, goals, blockers, known issues | where are we now? |
 | `STATUS.template.md` | the pristine copy of the above | what does a new project start from? |
 | `RUNBOOK.md` | build, test, run, reproduce | how do I work on this? |
 | `project.yaml` | areas, owners, commands, profile | what exists? |

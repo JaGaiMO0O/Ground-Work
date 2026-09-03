@@ -119,6 +119,10 @@ It will **stop** you in only a few cases: reading a secrets file, writing to
 external code the project does not own, and hand-editing a file that a script
 regenerates. In each of those the change would have been lost or harmful anyway.
 
+If something looks like a genuine bug, check [RUNBOOK.md](RUNBOOK.md) before
+reporting it - anything already known is listed there, so your time goes on the
+things that are not.
+
 ---
 
 ## Next
