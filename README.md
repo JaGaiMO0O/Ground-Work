@@ -61,10 +61,10 @@ outside its author. If you are one of the internal testers,
 **[TESTING.md](TESTING.md)** is your brief: what to exercise, what a correct
 result looks like, and how to file what you find.
 
-File findings as issues on this repository:
-<https://gitlab.optimizasolutions.com/myaghmour/ground-works/-/issues>. The
-**Bug** template loads automatically. Check *Open defects* in
-[RUNBOOK.md](RUNBOOK.md) first - two are already known.
+File findings as a reply in the Teams thread that announced this - GitLab
+Issues is switched off across the organisation. `TESTING.md` carries the field
+list to paste. Check *Open defects* in [RUNBOOK.md](RUNBOOK.md) first - two are
+already known.
 
 ## License
 

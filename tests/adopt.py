@@ -254,14 +254,16 @@ def legacy_overlay(target, _before, after, _out):
 
 
 def no_template_only_files_travel(target, _before, after, _out):
-    """LICENSE, TESTING.md and .gitlab/ describe the TEMPLATE, not a project
-    made from it.
+    """LICENSE and TESTING.md describe the TEMPLATE, not a project made from it.
 
     LICENSE is the one with teeth: it is Optimiza's licence over the scaffold,
     so copying it into somebody's repository would put that notice over their
-    own work - and its own text says a scaffolded project is theirs. The other
-    two would send the adopter a testing brief for a build they are not
-    testing.
+    own work - and its own text says a scaffolded project is theirs. TESTING.md
+    would send the adopter a testing brief for a build they are not testing.
+
+    `.gitlab/` was here too until GitLab Issues turned out to be disabled
+    org-wide; the assertion stays so re-adding a tracker directory has to be
+    deliberate.
     """
     for unwanted, why in (
         ("LICENSE", "the scaffold's licence, over the adopter's own work"),

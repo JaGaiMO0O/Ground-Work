@@ -19,22 +19,38 @@ Track A; Track B is the one that matters and takes about an hour.
 
 ## File your findings here
 
-**<https://gitlab.optimizasolutions.com/myaghmour/ground-works/-/issues>**
+**Reply in the Teams thread where this was announced** - the one that sent you
+here. One reply per finding.
 
-Open an issue per finding. The **Bug** template loads automatically and asks
-for the seven things that make a report actionable - fill it in rather than
-writing prose, because the fields are the ones that were missing from reports
-that could not be reproduced.
+GitLab Issues is switched off across the organisation, so there is no tracker
+to file into. The thread is deliberate rather than a fallback: it needs nothing
+switched on, no licence, and no account you do not already have. Anything real
+gets promoted into Jira afterwards; that is not your job.
+
+Paste this and fill it in. Leave a line blank rather than guessing - a blank
+line is information, a guessed one costs somebody an hour finding out it was
+wrong.
+
+```text
+What happened:
+What I expected instead:
+Steps to reproduce:
+Build (git describe --tags):
+OS / shell / Python version:
+Subject repo, if adoption was involved (size, language, clean tree?):
+Anything modified or deleted that I did not create (yes / no / did not check):
+Output:
+```
 
 Two rules:
 
 1. **Check *Open defects* in [RUNBOOK.md](RUNBOOK.md) first.** Two defects are
    already known and written down. Re-reporting them costs you time and tells
    nobody anything.
-2. **File as you go, not at the end.** One issue per finding beats one issue
-   listing nine, because nine cannot be closed separately.
+2. **Post as you go, not at the end.** One reply per finding beats one reply
+   listing nine, because nine cannot be answered separately.
 
-Nothing here is urgent. File it and carry on; it gets picked up when there is
+Nothing here is urgent. Post it and carry on; it gets picked up when there is
 time.
 
 ---
