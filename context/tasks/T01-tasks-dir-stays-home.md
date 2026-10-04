@@ -1,4 +1,4 @@
-# T01 - Keep context/tasks/ out of every project made from the template
+# T01 - Only template files travel: ask git, and keep context/tasks/ home
 
 Status: ready
 Wave: 1
@@ -7,75 +7,121 @@ Build: build-0.1A
 
 ## Goal
 
-Neither `init.py --adopt` nor plain `init.py` carries `context/tasks/` into
-somebody else's project.
+Adoption, and the invariant harness's copy of the repo, take their file list
+**from git** - tracked files plus untracked-but-not-ignored ones - instead of
+walking the disk. And `context/tasks/` never reaches a project made from the
+template, by `--adopt` or by plain `init.py`.
 
 ## Why
 
-`context/tasks/` is Ground Work's own work log. Today `scripts/_adopt.py`
-copies all of `context/`, so the next adoption would ship these task files into
-the target - the fourth instance of "the repo ships its own content into another
-project" (STATUS, handoffs and ADRs were the first three, fixed by rule 4 in
-`_adopt.py`'s docstring). Plain `init.py` removes template-only paths through
-`TEMPLATE_ONLY_DIRS` (`scripts/init.py:49`), which is currently empty.
+**Found at the wave-0 gate (2026-10-04).** Claude Code puts worker worktrees in
+`.claude/worktrees/` *inside* this repo. Git ignores them (through
+`.git/info/exclude`), so `git status` is clean - but `_adopt.scaffold_plan()`
+walks the filesystem. An adoption from `main` with one live worktree planned
+**188 files, 124 of them a complete copy of the worktree**; the adopt suite
+failed on `main` (`legacy scaffold reaches root`, 199 files added) and the
+invariant suite took 150s instead of ~46s, because `build_pristine()`
+(`tests/invariants.py`) `copytree`s the whole repo too. The same walk would carry
+any gitignored local file - a developer's `.claude/settings.local.json` - into
+somebody else's project.
+
+This is the "ask the environment, don't assume it" defect class a fifth time:
+the template is what git says it is, not whatever happens to be on disk.
+
+Separately, `context/tasks/` is Ground Work's own work log and **is** tracked, so
+the git listing alone will not exclude it. Adoption copies all of `context/`;
+plain `init.py`'s `TEMPLATE_ONLY_DIRS` (`scripts/init.py:49`) is empty. Shipping
+it would be the fourth "repo ships its own content into another project" defect.
 
 ## Files you may change
 
+- `scripts/_lib.py` - one new function, see step 1
 - `scripts/_adopt.py`
-- `scripts/init.py`
+- `scripts/init.py` - `TEMPLATE_ONLY_DIRS` and the code that applies it only
 - `tests/adopt.py`
+- `tests/invariants.py` - `build_pristine()` only
+- `.gitignore` - one line
 - `context/tasks/T01-tasks-dir-stays-home.md` - Report section and Status line only
 
 ## Do exactly this
 
-1. `scripts/_adopt.py`: add a constant `SKIP_ON_ADOPT_PATHS = {"context/tasks"}`
-   next to `SKIP_ON_ADOPT_DIRS`, with a one-line comment that it must match
-   `TEMPLATE_ONLY_DIRS` in `init.py`. In `travels()`, return `False` for any path
-   equal to, or under, an entry in that set.
-2. `scripts/init.py:49`: set `TEMPLATE_ONLY_DIRS = ("context/tasks",)`, with a
-   one-line comment that it must match `SKIP_ON_ADOPT_PATHS` in `_adopt.py`.
-   Check that the code at `init.py:77-78` handles a nested path such as
-   `context/tasks` - `ROOT / "context/tasks"` - and fix it within this function if
-   it does not.
-3. `tests/adopt.py`: extend the existing `no_live_content` assertion so it also
-   fails if any path under `context/tasks/` reaches the target. The repo will have
-   real files there by the time this runs, so this is a live test, not a
-   hypothetical.
+1. **`scripts/_lib.py`**: add `template_files(root) -> list[Path]`, returning
+   paths relative to `root`. If `root` is in a git work tree, run
+   `git ls-files -z --cached --others --exclude-standard` there (bytes, `-z`,
+   split on `\0` - see the newline-translation gotcha in
+   `context/handoffs/2026-08-26-adoption-undo-by-manifest.md`), drop any path that
+   no longer exists on disk (deleted but not yet committed), and return the rest.
+   Otherwise - a template downloaded as a zip has no git - fall back to walking
+   the directory. Docstring: why, citing the worktree finding.
+2. **`scripts/_adopt.py`**:
+   - `import _lib as lib`.
+   - In `scaffold_plan()`, build the candidate files from `lib.template_files()`
+     filtered to the `include` list, instead of `rglob`. Every existing filter
+     (`NOISE`, `examples`, `travels()`, `destination_for()`) still applies on top.
+   - Add `SKIP_ON_ADOPT_PATHS = {"context/tasks"}` next to `SKIP_ON_ADOPT_DIRS`,
+     with a comment that it must match `TEMPLATE_ONLY_DIRS` in `init.py`, and
+     make `travels()` return `False` for anything equal to or under an entry.
+3. **`scripts/init.py`**: `TEMPLATE_ONLY_DIRS = ("context/tasks",)`, with a
+   comment that it must match `SKIP_ON_ADOPT_PATHS` in `_adopt.py`. Check the code
+   at `:77-78` handles a nested path; fix it within that code if not.
+4. **`tests/invariants.py`**: `build_pristine()` copies the files listed by
+   `_lib.template_files(REPO)` (import `_lib` from `scripts/`) into `PRISTINE`,
+   instead of `copytree(REPO, ...)`. Keep excluding `systems/`.
+5. **`.gitignore`**: add `.claude/worktrees/`, so the exclusion holds on every
+   machine, not only where the app wrote `.git/info/exclude`.
+6. **`tests/adopt.py`**:
+   - Add a helper that runs a **given** template's `scripts/init.py` (T06 will
+     reuse it - name it clearly, e.g. `run_template_init(template, target, *argv)`).
+   - Extend `no_live_content` so it also fails if anything under `context/tasks/`
+     reaches the target.
+   - Add a case **only git's files travel**, harness argv `["--help"]` (makes the
+     harness's own run a no-op). The assertion builds a throwaway template: copy
+     this repo's `template_files()` into a temp dir, `git init`, commit. Then plant,
+     *after* the commit:
+     - `.claude/worktrees/w1/scripts/check.py` and `.claude/settings.local.json`,
+       both listed in that template's `.git/info/exclude`;
+     - `docs/new-note.md`, untracked and **not** ignored.
+     Adopt from that template into a fresh `make(...)` target. Assert: no path
+     containing `worktrees`, no `settings.local.json`, and `docs/new-note.md`
+     present.
 
 ## Do not
 
-- Move or merge `TEMPLATE_ONLY_*` and `SKIP_ON_ADOPT_*` into one shared module.
-  Two cross-referenced constants are acceptable for now.
-- Touch `context/handoffs/` or `docs/decisions/` handling - rule 4 already
-  covers those.
+- Change `scan.py` - a secret scanner *should* read untracked files.
+- Change what `travels()` already excludes, or the manifest.
+- Merge `TEMPLATE_ONLY_*` and `SKIP_ON_ADOPT_*` into one constant.
 
 ## Acceptance criteria
 
-- [ ] An adoption from this repo produces no `context/tasks/` in the target.
+- [ ] The new case fails before your change (worktree and local settings travel)
+      and passes after - say so in Report.
+- [ ] `no live content travels` fails if the `context/tasks` exclusion is removed -
+      check by reverting it briefly.
+- [ ] Adopt suite **23/23** (22 + 1); invariants **39/39**.
 - [ ] Plain `init.py` on a fresh copy deletes `context/tasks/`.
-- [ ] `no live content travels` case fails if the exclusion is removed - check
-      this by temporarily reverting step 1, running the case, then restoring.
-- [ ] adopt suite: 22/22.
+- [ ] From `main` with a live worktree present, a dry-run adoption plans no file
+      under `.claude/worktrees/` (the lead re-runs this at the gate).
 
 ## Verify
 
 ```bash
+python tests/adopt.py --only "git's files"       # expected: 1/1 passed
 python tests/adopt.py --only "no live content"   # expected: 1/1 passed
-python tests/adopt.py                             # expected: 22/22 passed
+python tests/adopt.py                             # expected: 23/23 passed
+python tests/invariants.py                        # expected: 39/39 passed
 python scripts/check.py                           # expected: exit 0
-
-# Plain init on a throwaway copy (outside the repo):
-#   copy the tracked files to a temp dir, run
+# Plain init on a throwaway copy outside the repo: copy the tracked files, run
 #   python scripts/init.py --project t --profile general --purpose p --done d
-#   then confirm context/tasks/ is gone. Record the commands and result.
+# and confirm context/tasks/ is gone. Record the commands and result.
 ```
 
 ## Commit
 
 ```
-fix(T01): keep context/tasks out of new projects
-- Skip it on --adopt and delete it on plain init
-- Assert it in the no-live-content adopt case
+fix(T01): only template files travel
+- Template file list comes from git, not the disk
+- Worktrees and ignored local files stay home
+- context/tasks never reaches a new project
 ```
 
 No `Co-Authored-By` trailer. Stage only the files listed above. Never push.

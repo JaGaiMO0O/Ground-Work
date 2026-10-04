@@ -64,7 +64,7 @@ can't tell `9c1e2f4` is 0.1A.
    that file.
 5. `template_version()`: return the output of `git describe --tags --always`
    run in `ROOT`, or `"unknown"` if git fails. Update its docstring.
-6. In `tests/adopt.py`, add a helper that runs a given template's `init.py`
+6. In `tests/adopt.py`, reuse the helper T01 added that runs a given template's `init.py`
    (not only this repo's), and three cases:
 
    | Case | Harness argv | Assertion |
@@ -98,7 +98,7 @@ can't tell `9c1e2f4` is 0.1A.
 
 - [ ] Both second-gen cases fail on the code as it is before your change - run
       them first and say so in Report - and pass after.
-- [ ] Adopt suite: **25/25** (22 + 3).
+- [ ] Adopt suite: **26/26** (23 + 3).
 - [ ] A first-generation `init.py` on a fresh copy still fills AGENTS.md and
       README as before (the existing cases cover this).
 
@@ -107,7 +107,7 @@ can't tell `9c1e2f4` is 0.1A.
 ```bash
 python tests/adopt.py --only second-gen   # expected: 2/2 passed
 python tests/adopt.py --only manifest     # expected: passes
-python tests/adopt.py                     # expected: 25/25 passed
+python tests/adopt.py                     # expected: 26/26 passed
 python scripts/check.py                   # expected: exit 0
 git describe --tags --always              # the value the manifest must carry
 ```

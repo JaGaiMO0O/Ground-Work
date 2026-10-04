@@ -70,6 +70,11 @@ the Microsoft Store alias stub, which exists on PATH but does not run Python. So
 5. In `START-HERE.md`, directly after the line "You do not need to understand the
    whole repo. You need these.", add the same sentence.
 
+6. In `tests/hooks.py`, delete `TMP` at the end of every run, using the
+   version-guarded `rmtree` pattern T00 added to the other suites. Since T00
+   named it per process, each run otherwise leaves a ~176KB folder in temp
+   (found by T00's worker).
+
 ## Do not
 
 - Change the allow-list entries (`Bash(python scripts/...)`). Deferred.
@@ -86,6 +91,7 @@ the Microsoft Store alias stub, which exists on PATH but does not run Python. So
       directory with no `python` - or, if that cannot be arranged on this
       machine, say so in Report and show the `.env` case passing.
 - [ ] hooks suite: **23/23**.
+- [ ] A run of `tests/hooks.py` leaves no `guard-tests-*` folder behind.
 
 ## Verify
 
@@ -104,6 +110,7 @@ fix(T02): resolve python for hooks on any OS
 - Fail visibly when neither exists
 - Test the real hook command from settings.json
 - Shims try python first; docs note python3
+- hooks.py cleans up its temp dir
 ```
 
 No `Co-Authored-By` trailer. Stage only the files listed above. Never push.

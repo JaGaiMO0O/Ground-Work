@@ -39,8 +39,8 @@ any fixture contains is a one-line `requirements.txt`.
 
 ## Do exactly this
 
-1. Import `_lib` in `_adopt.py` and use `lib.CODE_SUFFIXES` (added by T05) in
-   place of the local `CODE_SUFFIXES`; delete the local copy.
+1. `_adopt.py` already imports `_lib` (T01). Use `lib.CODE_SUFFIXES` (added by
+   T05) in place of the local `CODE_SUFFIXES`; delete the local copy.
 2. Add a helper that reports whether a Python project has tests: a `tests/` or
    `test/` directory, a `pytest.ini`, or a `conftest.py`, at the root **or** in
    any immediate subdirectory not in `NOISE`.
@@ -80,7 +80,7 @@ any fixture contains is a one-line `requirements.txt`.
 
 - [ ] All five cases fail before your `_adopt.py` change (the crash case errors)
       and pass after - say so in Report.
-- [ ] Adopt suite: **30/30** (25 + 5).
+- [ ] Adopt suite: **31/31** (26 + 5).
 - [ ] `_adopt.py` no longer defines its own `CODE_SUFFIXES`.
 
 ## Verify
@@ -88,7 +88,7 @@ any fixture contains is a one-line `requirements.txt`.
 ```bash
 python tests/adopt.py --only detect       # expected: 4/4 passed
 python tests/adopt.py --only package      # expected: 1/1 passed
-python tests/adopt.py                     # expected: 30/30 passed
+python tests/adopt.py                     # expected: 31/31 passed
 grep -n "^CODE_SUFFIXES" scripts/_adopt.py   # expected: nothing
 python scripts/check.py                   # expected: exit 0
 ```

@@ -1,6 +1,6 @@
 # T00 - Make the test harnesses parallel-safe and Python 3.8-safe
 
-Status: done
+Status: accepted
 Wave: 0
 Depends on: none
 Build: build-0.1A
@@ -150,3 +150,16 @@ None.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Fast-forwarded into `main` as `7bfbb3a`
+(branch `claude/kind-villani-c2858e`). In scope, minimal, honest report.
+
+- The `onerror` branch is unexercised: no Python below 3.12 on this machine.
+  Carried to T13.
+- *Found, not fixed* item 1 (hooks.py leaves its temp dir behind) is folded
+  into T02, which owns `tests/hooks.py` in wave 1.
+- **Gate on `main`:** check exit 0, invariants 39/39 (150s), hooks 21/21,
+  adopt **21/22**. The failure is not T00's: with this worktree living under
+  `.claude/worktrees/`, adoption copied it into every target (199 files added).
+  Pre-existing leak, exposed by the worktree workflow. T01 rewritten to fix the
+  root cause - the template's file list now comes from git.

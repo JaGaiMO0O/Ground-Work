@@ -33,7 +33,7 @@ Record every step's command and result in Report, as a table:
 
 1. **Regression.** In this repo: `python scripts/check.py`, then
    `tests/invariants.py` (expect 49), `tests/hooks.py` (26), `tests/adopt.py`
-   (30), `tests/scan.py` (6).
+   (31), `tests/scan.py` (6).
 2. **Transcript discovery.** Run the real-data check from T03's *Verify*.
    Expect every folder to match.
 3. **Older Python.** `py -0`. If any Python below 3.12 is installed, run all four
