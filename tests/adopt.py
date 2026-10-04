@@ -514,6 +514,86 @@ def only_git_files_travel(_target, _before, _after, _out):
     return ""
 
 
+def second_gen_source() -> "tuple[Path, str]":
+    """A copy of this repo that has already run init.py - the template the
+    second person adopts from. Its AGENTS.md no longer holds a single
+    placeholder token, which is what token substitution never handled.
+
+    Tracked files only, so nothing local to this checkout travels. -> (copy, a
+    fixture problem or "")."""
+    source = BASE / "second-gen-src"
+    nuke(source)
+    listed = subprocess.run(["git", "ls-files", "-z"], cwd=str(REPO),
+                            capture_output=True)
+    if listed.returncode != 0:
+        return source, "fixture error: git ls-files failed in this repo"
+    for rel in listed.stdout.decode("utf-8", errors="replace").split("\0"):
+        if not rel or not (REPO / rel).is_file():
+            continue
+        destination = source / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO / rel, destination)
+    result = run_template_init(
+        source, source, "--project", "src-proj", "--profile", "general",
+        "--purpose", "SOURCE PURPOSE", "--done", "SOURCE DONE")
+    if result.returncode != 0:
+        return source, "fixture error: init.py in the copy exited %d" % result.returncode
+    return source, ""
+
+
+def second_gen_keeps_target_purpose(_target, _before, _after, _out):
+    """Adopting from an initialised copy must give the target its own name,
+    purpose and done - never the copy's."""
+    source, problem = second_gen_source()
+    if problem:
+        return problem
+    fresh = make(98, use_git=True)
+    run_template_init(source, fresh, "--adopt", str(fresh),
+                      "--purpose", "TARGET PURPOSE", "--done", "TARGET DONE")
+    text = (fresh / "AGENTS.md").read_text(encoding="utf-8")
+    lines = text.splitlines()
+    if f"# Project: {fresh.name}" not in lines:
+        return "the target's name did not reach the router"
+    if "Purpose: TARGET PURPOSE" not in lines:
+        return "--purpose did not reach the router"
+    if "Done = TARGET DONE" not in lines:
+        return "--done did not reach the router"
+    if "SOURCE" in text:
+        return "the source copy's purpose or done leaked into AGENTS.md"
+    status = (fresh / "STATUS.md").read_text(encoding="utf-8")
+    if "SOURCE PURPOSE" in status:
+        return "the source copy's purpose leaked into STATUS.md"
+    return ""
+
+
+def second_gen_nothing_given(_target, _before, _after, _out):
+    """With no purpose or done to give, the target gets the placeholder back -
+    loud in check.py - rather than somebody else's goal, silently."""
+    source, problem = second_gen_source()
+    if problem:
+        return problem
+    fresh = make(97, use_git=True)
+    result = run_template_init(source, fresh, "--adopt", str(fresh))
+    text = (fresh / "AGENTS.md").read_text(encoding="utf-8")
+    if "<ONE SENTENCE" not in text:
+        return "the placeholders were not written back"
+    if "SOURCE" in text:
+        return "the source copy's purpose or done leaked into AGENTS.md"
+    if result.returncode != 1:
+        return "adopt exited %d with an unfilled router, wanted 1" % result.returncode
+    return ""
+
+
+def manifest_records_describe(target, _before, after, _out):
+    """A tester cannot tell a bare sha is 0.1A. The build label can."""
+    manifest = json.loads(after[".adopt-manifest.json"].decode())
+    wanted = git(REPO, "describe", "--tags", "--always").stdout.strip()
+    if manifest.get("template_version") != wanted:
+        return "template_version is %r, wanted %r" % (
+            manifest.get("template_version"), wanted)
+    return ""
+
+
 def app_is_an_area(target, _before, after, _out):
     """One file is enough to be an area. Requiring two silently dropped the
     single-file serving layer that every session was reading."""
@@ -552,6 +632,10 @@ CASES = [
     ("undo restores exactly     [+]",   build_undo_target, FILLED,                               0, undo_is_exact),
     ("undo keeps edited files   [+]",   build_git,        FILLED,                                0, undo_keeps_edited_files),
     ("undo refuses with no record",     build_git,        ["--help"],                            0, undo_refuses_without_manifest),
+    # adopting from a copy that has already run init.py
+    ("second-gen keeps target purpose", build_git,        ["--help"],                            0, second_gen_keeps_target_purpose),
+    ("second-gen, nothing given",       build_git,        ["--help"],                            0, second_gen_nothing_given),
+    ("manifest records git describe",   build_git,        FILLED,                                0, manifest_records_describe),
 ]
 
 

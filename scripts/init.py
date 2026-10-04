@@ -50,8 +50,10 @@ TEMPLATE_ONLY_FILES = ("LICENSE", "TESTING.md")
 TEMPLATE_ONLY_DIRS = ("context/tasks",)
 
 PROJECT_TOKEN = "<PROJECT_NAME>"
-PURPOSE_RE = re.compile(r"<ONE SENTENCE[^>]*for>")
-DONE_RE = re.compile(r"<ONE SENTENCE[^>]*finished>")
+# The two Tier 0 lines exactly as the template carries them. Written back when
+# there is no answer, so a copy adopted from never hands over its own goal.
+PURPOSE_LINE = "Purpose: <ONE SENTENCE - what this project is for>"
+DONE_LINE = "Done = <ONE SENTENCE - how we know it is finished>"
 DB_ROLE_TOKEN = "<DB_ROLE>"
 
 # The one line project.yaml carries to say "this is the scaffold, not a project
@@ -106,16 +108,25 @@ def personalized_agents(text: str, project: str, purpose: str, done: str,
                         db_role: str) -> str:
     """Fill in the Tier 0 router. Used by both plain init and --adopt.
 
+    Sets the lines rather than substituting tokens, the way the README H1 and
+    `project:` already are. A copy that has run init has no tokens left, so
+    adopting from it used to hand the target the copy's name, purpose and done -
+    and drop the ones the user gave. With no answer, the placeholder goes back,
+    so check.py fails loudly instead of the target inheriting a goal.
+
     A lambda rather than a plain replacement string, because re.sub reads
     backslashes in the replacement - a purpose containing a Windows path used to
     raise, or silently eat characters.
     """
-    text = text.replace(PROJECT_TOKEN, project)
+    purpose_line = f"Purpose: {purpose}" if purpose else PURPOSE_LINE
+    done_line = f"Done = {done}" if done else DONE_LINE
+    text = re.sub(r"^# Project:.*$", lambda _m: f"# Project: {project}",
+                  text, count=1, flags=re.M)
+    text = re.sub(r"^Purpose:.*$", lambda _m: purpose_line,
+                  text, count=1, flags=re.M)
+    text = re.sub(r"^Done =.*$", lambda _m: done_line,
+                  text, count=1, flags=re.M)
     text = text.replace(DB_ROLE_TOKEN, db_role or "none")
-    if purpose:
-        text = PURPOSE_RE.sub(lambda _m: purpose, text)
-    if done:
-        text = DONE_RE.sub(lambda _m: done, text)
     return text
 
 
@@ -483,8 +494,12 @@ def adopt(args, profile: str) -> int:
 
 def template_version() -> str:
     """Which Ground Work wrote this. ADR 0003 keeps a copy per project, which is
-    only honest if the copy can say how old it is."""
-    result = lib.git("rev-parse", "--short", "HEAD", cwd=ROOT)
+    only honest if the copy can say how old it is.
+
+    `git describe --tags --always`, so it reads as a build label such as
+    `build-0.1A` (or `build-0.1A-3-g9c1e2f4` past it) - a bare sha means nothing
+    to a tester. "unknown" when git cannot say, e.g. a template from a zip."""
+    result = lib.git("describe", "--tags", "--always", cwd=ROOT)
     if result.returncode == 0 and result.stdout.strip():
         return result.stdout.strip()
     return "unknown"
@@ -759,8 +774,11 @@ def main() -> int:
             path.unlink(missing_ok=True)
     if dropped:
         lib.ok(f"removed template-only file(s): {', '.join(dropped)}")
-        lib.info("       They described the template. This is a project now, so "
-                 "licence and testing brief are yours to write.")
+        lib.info("       They described the template - its licence, its testing "
+                 "brief and its own\n"
+                 "       task log. This is a project now, so the licence and "
+                 "testing brief are\n"
+                 "       yours to write.")
 
     # The scaffold is now part of the project, not a pending overlay.
     scaffold_root = lib.PROFILES_DIR / profile / "scaffold"

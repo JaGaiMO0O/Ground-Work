@@ -1,6 +1,6 @@
 # T06 - Stop second-generation adoption leaking purpose; stamp the build label
 
-Status: ready
+Status: done
 Wave: 2
 Depends on: T01
 Build: build-0.1A
@@ -134,15 +134,76 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: the `fix(T06): stop second-gen adopt leaking purpose` commit on
+branch `T06-second-gen-adopt-and-version` (hash given to the user; a commit
+cannot carry its own hash).
 
 **What changed**
 
+- `scripts/init.py`
+  - Added `PURPOSE_LINE` / `DONE_LINE`, the two placeholder lines exactly as in
+    `AGENTS.md`. Deleted `PURPOSE_RE` / `DONE_RE`, which are no longer used.
+  - `personalized_agents()` sets `# Project:`, `Purpose:` and `Done =` with
+    `re.sub(..., count=1, flags=re.M)` and lambda replacements. With no purpose
+    or done, it writes the placeholder line back. `DB_ROLE_TOKEN` replacement
+    is unchanged. `unfilled()` is unchanged and token-based.
+  - `template_version()` returns `git describe --tags --always` in `ROOT`, or
+    `"unknown"`. Docstring updated.
+  - Step 7: the message after removing template-only paths now names all
+    three: licence, testing brief and task log.
+  - Step 4: plain init does **not** delete `STATUS.template.md`. Its deletions
+    are `TEMPLATE_ONLY_FILES` (`LICENSE`, `TESTING.md`), `TEMPLATE_ONLY_DIRS`,
+    the examples, unused profiles and the applied scaffold. Confirmed on a
+    disk copy: `second-gen-src/STATUS.template.md` is still there after the
+    fixture's plain init. No change needed.
+- `tests/adopt.py`: three cases, using T01's `run_template_init()`.
+  - `second_gen_source()` copies `git ls-files` into
+    `BASE/second-gen-src` and runs that copy's plain init with `SOURCE ...`
+    values. A non-zero exit is reported as a fixture error.
+  - `second-gen keeps target purpose`, `second-gen, nothing given` and
+    `manifest records git describe` assert what step 6 lists. Targets come
+    from `make(98)` and `make(97)`.
+
+Before the change, run first, all three failed for the reason the task gives:
+- `second-gen keeps target purpose`: "the target's name did not reach the
+  router". The copy's `# Project: src-proj` survived.
+- `second-gen, nothing given`: "the placeholders were not written back".
+- `manifest records git describe`: `template_version is 'd0c3f9f', wanted
+  'build-0A-8-gd0c3f9f'`.
+
 **Verify output**
+
+```
+python tests/adopt.py --only second-gen   -> 2/2 passed
+python tests/adopt.py --only manifest     -> 1/1 passed
+python tests/adopt.py                     -> 26/26 passed in 104s
+python scripts/check.py                   -> "ok   all invariants hold", exit 0
+git describe --tags --always              -> build-0A-8-gd0c3f9f
+```
+
+First-generation init still works. The 23 existing cases pass, and the
+second-gen fixture's own plain init exits 0 and fills `AGENTS.md`.
 
 **Deviation requests**
 
+None. One setup note: the app created this worktree's branch at `1a79a04`,
+8 commits behind `main` and with no `context/tasks/`. I fast-forwarded it
+(`git merge --ff-only main`, now at `d0c3f9f`) before reading the task. No
+history was rewritten, and there were no commits of mine at that point.
+
 **Found, not fixed**
+
+- `tests/adopt.py`: `run_template_init()` and the harness's own
+  `subprocess.run` in `main()` do not set `stdin`, so the child inherits the
+  caller's. `adopt()` (`scripts/init.py:294`) prompts when `sys.stdin.isatty()`
+  and purpose or done is missing. So when the suite runs from an interactive
+  terminal, `unfilled Tier 0 is an error` and the new `second-gen, nothing
+  given` can block on a hidden prompt, because the prompt goes into the
+  captured stdout. Not seen here: the tool shell's stdin is not a TTY.
+  Suggested fix: `stdin=subprocess.DEVNULL` in both calls.
+- The repo's only tag is `build-0A`, so `git describe` gives
+  `build-0A-8-g...`. The manifest shows `build-0.1A` only after T14 tags the
+  release.
 
 ---
 
