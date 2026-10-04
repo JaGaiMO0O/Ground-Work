@@ -1,6 +1,6 @@
 # T15 - The skip-list reference check asks git; interview dates must be real
 
-Status: ready
+Status: done
 Wave: 3
 Depends on: T05
 Build: build-0.1A
@@ -86,15 +86,52 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: this commit on `T15-skip-check-asks-git` (hash reported in chat)
 
 **What changed**
 
+- Before starting: fast-forwarded the worktree from `1a79a04` to `main`
+  (`6d41925`). Clean fast-forward, nothing lost.
+- `check.py` `code_files()`: candidate list now comes from
+  `lib.template_files(ROOT)`; the `os.walk` is gone (and with it the only use
+  of `import os`, so that import is removed). Kept on top: `SKIP_TOP_DIRS` on
+  the first path part, `SKIP_ANY_DIRS` on any directory part,
+  `lib.CODE_SUFFIXES`, the 1 MB cap. The listed-path exclusion in
+  `check_skip_list` is untouched.
+- `check.py` citations: the `per` form moved out of `CITE_OTHER` into
+  `CITE_PER`; its date must pass `date.fromisoformat`. A claim whose only
+  citation is a `per` with a bad date is an error:
+  `claim cites an invalid date: (per Rania, 2026-99-99)`. A claim with a bad
+  `per` date but another valid citation is still cited (the bad `per` simply
+  does not count) - no other rule or message changed.
+- `tests/invariants.py`: the two cases from the table.
+  - The worktree case assembles the dead file's name at runtime
+    (`"old_" + "report"`): `tests/invariants.py` is itself copied into every
+    case, so the literal name in it would be a real reference and a real
+    warning. What the case asserts is as specified.
+- Before/after: with only the tests added, the worktree case exited **2** with
+  `` `src/old_report.py` is listed under Do not read but referenced from
+  .claude/worktrees/w1/src/app/caller.py `` (the false warning), and the
+  invalid-date case exited **0**. After the fix both pass.
+
 **Verify output**
+
+```
+python tests/invariants.py --only "worktree copies"   1/1 passed
+python tests/invariants.py --only "invalid"           1/1 passed
+python tests/invariants.py                            51/51 passed in 138s
+python scripts/check.py                               exit 0
+```
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- `scripts/check.py` (STATUS goals staleness rule, `from datetime import date`
+  inside the function, ~line 707): now redundant with the module-level import
+  this task added. Harmless; outside the parts of `check.py` this task owns.
 
 ---
 

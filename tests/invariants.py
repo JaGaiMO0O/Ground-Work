@@ -497,6 +497,25 @@ def m_skip_referenced():
                 "`src/app/legacy_tax.py` - no calls in 12 months of access logs")
 
 
+def m_skip_ignores_worktrees():  # positive control
+    """A Claude Code worktree is a full copy of the repo that git ignores. Its
+    copy of a dead file, and anything in it naming one, is not the project."""
+    # Assembled, not written out: this file is copied into the case, and the
+    # whole name in it would be a real reference.
+    dead = "old_" + "report"
+    setup_local("the tax rate - `src/app/main.py:3`",
+                f"`src/{dead}.py` - no calls in 12 months of access logs")
+    write(f"src/{dead}.py", "def run():\n    pass\n")
+    write(f".claude/worktrees/w1/src/{dead}.py", "def run():\n    pass\n")
+    write(".claude/worktrees/w1/src/app/caller.py", f"import {dead}\n")
+
+
+def m_claim_per_bad_date():
+    setup()
+    patch("map/demo/CARD.md", "## Landmines\n- none",
+          "## Landmines\n- totals round half-up (per Rania, 2026-99-99)")
+
+
 def m_partial_survey_false():  # positive control
     setup()
     patch("project.yaml", "survey: true", "survey: false")
@@ -666,6 +685,7 @@ CASES = [
     ("card claim uncited",             m_claim_uncited,             1, "claim has no citation",         False),
     ("claim marked unverified   [+]",  m_claim_unverified,          0, "",                              False),
     ("claim cited per person    [+]",  m_claim_per_person,          0, "",                              False),
+    ("interview date invalid",         m_claim_per_bad_date,        1, "invalid date",                  False),
     ("local citation file missing",    m_local_citation_missing,    1, "does not exist",                False),
     ("local citation line past end",   m_local_citation_past_end,   1, "has only",                      False),
     ("skip entry without reason",      m_skip_no_reason,            1, "needs a reason",                False),
@@ -674,6 +694,7 @@ CASES = [
     ("partial card, survey true",      m_partial_survey_true,       1, "missing section",               False),
     ("card at 2,400 tokens      [+]",  m_card_at_2400,              0, "",                              False),
     # these need real tracked files
+    ("skip check ignores worktree copies [+]", m_skip_ignores_worktrees, 0, "",                       True),
     (".env committed",                 m_env_committed,             1, ".env is tracked",               True),
     ("file tracked under systems/",    m_systems_committed,         1, "tracked under systems/",        True),
     # profile isolation
