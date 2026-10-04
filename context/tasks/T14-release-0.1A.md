@@ -60,14 +60,14 @@ has to be cheap to produce: two command runs, no writing.
    - *Gotcha*: copy the most important line from T13's Report.
    - *Next*: rollout with at least one Mac and one Java/Maven project; the
      original tester's re-test; the directory rename.
-5. **Tag - only on explicit instruction.** Prepare, but do **not** run, this
-   command; show it to the user and run it only if they say yes in this session:
-   `git tag -a build-0.1A -m "Build 0.1A - version 0.1, alpha"`. Never push the
-   tag or any branch.
+5. **Do not create the tag.** You are in a worktree; a tag made here would mark
+   your branch, not `main`. Write the exact command in Report -
+   `git tag -a build-0.1A -m "Build 0.1A - version 0.1, alpha"` - and the lead
+   creates it on `main` after merging this task, only on the user's go-ahead.
 
 ## Do not
 
-- Push anything.
+- Push anything, or create a tag.
 - Change Tracks A-C of TESTING.md.
 - Remove an Open defects entry whose fixing task is not `accepted`.
 
@@ -76,7 +76,7 @@ has to be cheap to produce: two command runs, no writing.
 - [ ] Track D asks for two `usage.py --path` files and explains why.
 - [ ] `check.py` exits 0; `status.py --check` up to date.
 - [ ] The handoff lists every task with its commit.
-- [ ] The tag exists only if the user said yes - Report records which.
+- [ ] No tag created by this task; the tag command is in Report.
 
 ## Verify
 
@@ -84,7 +84,7 @@ has to be cheap to produce: two command runs, no writing.
 python scripts/check.py              # expected: exit 0
 python scripts/status.py --check     # expected: up to date
 grep -n "usage.py --path" TESTING.md # expected: Track D
-git tag -l "build-0.1A"              # expected: present only if approved
+git tag -l "build-0.1A"              # expected: nothing - the lead tags main
 ```
 
 ## Commit
@@ -109,7 +109,7 @@ Commit:
 
 **Verify output**
 
-**Tag created?** (yes / no, and the user's words)
+**Tag command for the lead**
 
 **Deviation requests**
 

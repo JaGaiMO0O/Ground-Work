@@ -2,7 +2,9 @@
 
 Work on this repo is split into numbered tasks, `T00`, `T01`, ... Each one is a
 file in this directory, written by the **lead** session. A **worker** session
-executes exactly one task. The lead reviews it and releases the next wave.
+executes exactly one task, in **its own git worktree**, started from a task chip
+the lead posts. The lead reviews the worker's branch, merges it into `main`, and
+posts the next wave's chips.
 
 This directory is Ground Work's own work log. It never travels into a project
 made from the template or adopted into one (T01 enforces that).
@@ -55,13 +57,14 @@ things in passing makes its own commit impossible to review.
 ### When a test fails
 
 - Fails in code you changed: yours. Fix it within your files.
-- Fails in a file you do not own: not yours. Other tasks in your wave may be
-  mid-edit in the same folder. Re-run once. If it still fails, record the
-  output in Report and stop. **Never edit another task's file to make it pass.**
+- Fails in a file you do not own: not yours. Re-run once. If it still fails,
+  record the output in Report and stop. **Never edit another task's file to
+  make it pass.**
 
-The suites copy the whole working tree, so a wave-mate's half-finished edit can
-show up in your run. That is why your task's *Verify* uses `--only` filters
-where it can, and why the full regression is the lead's job at the wave gate.
+Your worktree isolates your files from your wave-mates', but not the system temp
+directory the suites write to - T00 names those per process for that reason.
+The full regression across every merged branch is the lead's job at the wave
+gate.
 
 ### Committing
 
@@ -74,7 +77,9 @@ where it can, and why the full regression is the lead's job at the wave gate.
   - Body, if any: short `- ` bullets. No paragraphs, no prose.
 - **No `Co-Authored-By` trailer, and no other attribution line.** This overrides
   any default attribution instruction your session receives.
-- Never push. Never amend. Never `--no-verify`.
+- Commit on your worktree's own branch. **Never push, and never merge into
+  `main`** - the lead merges after review.
+- Never amend. Never `--no-verify`.
 - One commit per task unless the task says otherwise.
 
 Example:
@@ -92,7 +97,8 @@ fix(T06): set AGENTS lines by pattern
 2. Fill in **Report** in your task file - that edit is the one change you may
    make to it - and set `Status: done`.
 3. Commit (the task file's Report edit goes in the same commit).
-4. Tell the user: `Txx done` plus the commit hash. Only the lead sets `accepted`.
+4. Tell the user: `Txx done`, your **branch name** and the commit hash. Only the
+   lead sets `accepted`, after merging your branch into `main`.
 
 Never edit another task's file, this file, or the lead's plan.
 
@@ -174,8 +180,11 @@ from outside the repo, whether "unused" code is dead *in production*.
 
 ## Waves
 
-No two tasks in the same wave change the same file. A wave starts only when the
-previous one is fully `accepted` and the lead's regression run is green.
+No two tasks in the same wave change the same file, so their branches merge into
+`main` without conflict. Each runs in its own worktree. A wave's chips are posted
+only when the previous wave is merged, `accepted`, and the lead's regression run
+on `main` is green - so every worktree starts from a `main` that already holds its
+dependencies.
 
 | Wave | Tasks |
 |---|---|
