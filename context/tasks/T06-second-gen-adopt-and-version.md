@@ -88,6 +88,11 @@ can't tell `9c1e2f4` is 0.1A.
      - *nothing given*: no `--purpose` / `--done`. Assert AGENTS.md contains
        `<ONE SENTENCE` and does not contain `SOURCE`, and that the adopt exits 1.
 
+7. Fix the message printed after plain `init.py` removes template-only paths
+   (around `scripts/init.py:762-763`, "licence and testing brief are yours to
+   write"). Since T01 it also removes `context/tasks/`, so the message must
+   describe everything removed. Found by T01's worker.
+
 ## Do not
 
 - Change how `--adopt` copies files, or the manifest's other fields.

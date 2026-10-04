@@ -1,6 +1,6 @@
 # T01 - Only template files travel: ask git, and keep context/tasks/ home
 
-Status: done
+Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -197,3 +197,12 @@ None.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Fast-forwarded into `main` as `0d8a02a`. Branch renamed from `claude/...` to
+`T01-tasks-dir-stays-home`.
+
+- Proven both ways, as asked: the planted worktree and the task log travel
+  before the change and not after.
+- **Wave-1 gate on `main` with five worktrees live: adopt 23/23.** At the
+  wave-0 gate the same setup failed with 199 files copied. Root cause fixed.
+- *Found, not fixed* (stale init.py message) -> T06 step 7.

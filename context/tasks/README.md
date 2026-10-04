@@ -21,7 +21,10 @@ You were started with something like *"Execute context/tasks/T04-....md"*.
    files your task names. Do not survey the repo.
 2. Check every task in your `Depends on:` line. Its `Status:` must be
    `accepted`. If any is not, stop and tell the user which.
-3. Set your task's `Status:` to `in progress`.
+3. Rename your branch to your task file's name without `.md`, for example
+   `git branch -m T05-check-enforces-card-contracts`. The app names it
+   `work/<random>`; the task ID is what the lead and the user look for.
+4. Set your task's `Status:` to `in progress`.
 
 ### Scope is fixed
 
@@ -128,7 +131,12 @@ it to be wrong.
 
 Not claims, so exempt: lines inside `<!-- -->` comments; lines containing a
 template placeholder matching `<[a-z][a-z0-9 /_-]*>` (e.g. `<name>`); a bullet
-whose whole text is `none` or `n/a` (any case).
+whose whole text is `none` or `n/a` (any case); a bullet with no text at all
+(`-` alone), which is a template blank.
+
+A bullet's claim **includes its continuation lines** - the indented lines that
+follow it, up to the next bullet, blank line or heading. A citation anywhere in
+them counts. (Ruled at the wave-1 gate, from T04's report.)
 
 For an area with `kind: local`, a `path:N` citation is checked against the
 repository: the path must exist (relative to the repo root) and line `N` (and
@@ -140,12 +148,13 @@ are not on disk to open.
 
 Each entry under `## Do not read...` is a bullet holding a backticked path and a
 **reason that says how it is known to be dead**. The reason is the text left
-after removing the bullet marker and the backticked path; it must be at least 15
+after removing the bullet marker and **every** backticked span; it must be at least 15
 characters. `per NAME, DATE` is a good reason when production usage is the
 evidence. The same exemptions as C1 apply: comment lines, placeholder lines, and
-a bullet whose whole text is `none` or `n/a`.
+a bullet whose whole text is `none` or `n/a`, and a bare `-`.
 
-For `kind: local` areas, if the entry's name (file stem, or directory name with
+For `kind: local` areas, **each** backticked path in an entry is checked: if its
+name (file stem, or directory name with
 any trailing `/**` removed) appears as a whole word in a code file **outside** the
 listed path, that is a warning: listed as dead, but something references it.
 

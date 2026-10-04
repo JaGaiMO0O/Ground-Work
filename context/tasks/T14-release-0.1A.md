@@ -56,7 +56,9 @@ has to be cheap to produce: two command runs, no writing.
      `--update`; `.ps1` adapters on macOS; `CLAUDE_CONFIG_DIR`; nested `.csproj`;
      the dead `tests/invariants.py` allow entry in adopted `settings.json`;
      promoting cards from `usage.py` counts; an ADR correcting 0003's weight
-     claim.
+     claim; on Windows, if `python` is missing but the Microsoft Store
+     `python3` stub is on PATH, the hooks run the stub and fail visibly
+     without blocking (found by T02).
    - *Gotcha*: copy the most important line from T13's Report.
    - *Next*: rollout with at least one Mac and one Java/Maven project; the
      original tester's re-test; the directory rename.

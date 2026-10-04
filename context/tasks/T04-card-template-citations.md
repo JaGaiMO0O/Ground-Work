@@ -1,6 +1,6 @@
 # T04 - Card templates and examples: citations, skip reasons, open questions
 
-Status: done
+Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -185,3 +185,12 @@ None.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Cherry-picked into `main` as `70e8839`. Branch renamed from `claude/...` to
+`T04-card-template-citations`.
+
+- All three *Found, not fixed* items were contract ambiguities, ruled in
+  `context/tasks/README.md` before T05 starts: a claim includes its
+  continuation lines; a bare `-` is exempt; a C2 reason strips every
+  backticked span and each path is reference-checked.
+- Commit body has a blank line after the subject, unlike T01/T02. Fine.

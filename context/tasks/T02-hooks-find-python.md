@@ -1,6 +1,6 @@
 # T02 - Make the guardrail hooks find Python on any OS, and test the real wiring
 
-Status: done
+Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -206,3 +206,14 @@ Answer: **APPROVED, with conditions**, all of them met:
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Cherry-picked into `main` as `fdf06cf`. Branch renamed from `claude/...` to
+`T02-hooks-find-python`.
+
+- Deviation approved with three conditions; all met and shown in Verify.
+- Reproduced the original silent failure (exit 127) before fixing it, and
+  proved the test never falls back to WSL. Gate: hooks 23/23, both wiring
+  cases on `C:\Program Files\Git\bin\bash.exe`.
+- *Found, not fixed*: allow-list `python` entries (already deferred); the
+  Windows Store `python3` stub case -> T14's deferred list. Old temp folders
+  predate the task - harmless.
