@@ -31,7 +31,7 @@ Load, in order:
 
 Do NOT load: `.fmb`, `.fmx`, `.rdf`, or any other binary source directly. Grep
 cannot read them, and opening one burns context on garbage. Run the derive step
-first - see `docs/stacks/oracle-forms.md`.
+first - see `profiles/legacy-modernization/docs/stacks/oracle-forms.md`.
 
 MCP servers: none.
 

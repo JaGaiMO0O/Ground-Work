@@ -84,7 +84,7 @@ extremely common in Oracle shops.
 * THE SOURCES ARE BINARY. "Grep before read" silently fails: the grep returns
   nothing, and nothing looks exactly like an empty system. The derive: block in
   project.yaml converts .fmb -> XML once, into map/<sys>/derived/,
-  and that is what gets searched. See docs/stacks/oracle-forms.md.
+  and that is what gets searched. See profiles/legacy-modernization/docs/stacks/oracle-forms.md.
 
 * THE REAL CONTRACT IS IN THE DATABASE. For a Forms application the PL/SQL
   package boundary is the interface, and schema.sql plus the package source are

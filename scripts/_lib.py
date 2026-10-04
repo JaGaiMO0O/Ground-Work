@@ -72,10 +72,9 @@ CARD_TOKEN_BUDGET = 2500        # an area card that costs more than this is not
                                 # cheaper than reading the code, citations included
 AGENTS_MD_MAX_LINES = 150
 
-# What counts as code when check.py looks for references to a "Do not read"
-# entry. A copy of the set in _adopt.py, which should import it from here (T10
-# does that). check.py must not import _adopt - it does not travel into adopted
-# projects.
+# What counts as code: check.py's "Do not read" reference search, and _adopt.py's
+# area detection. This is the only copy - _adopt.py imports it from here.
+# check.py must not import _adopt - it does not travel into adopted projects.
 CODE_SUFFIXES = {
     ".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".java",
     ".kt", ".go", ".rs", ".rb", ".php", ".cs", ".c", ".h", ".cpp", ".hpp",

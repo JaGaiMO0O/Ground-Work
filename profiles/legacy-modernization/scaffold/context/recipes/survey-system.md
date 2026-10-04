@@ -25,7 +25,7 @@ Load, in order:
    anything with a network or filesystem boundary.
 
 If the sources are binary (.fmb, .rdf, COBOL copybooks), stop and run the
-derive step first - see `docs/stacks/oracle-forms.md`. Grepping a binary
+derive step first - see `profiles/legacy-modernization/docs/stacks/oracle-forms.md`. Grepping a binary
 returns nothing and reads as "this system is empty".
 
 Do NOT load: the interior of the service, test suites, generated code, vendored

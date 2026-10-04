@@ -51,7 +51,7 @@ That prefills the repo, pinned ref, stack and date from `project.yaml`.
 
 **If the sources are binary** - `.fmb`, `.rdf`, `.mdb`, compiled artifacts -
 stop. Grep silently returns nothing on binaries, which reads exactly like an
-empty system. Run the derive step first: `docs/stacks/oracle-forms.md`.
+empty system. Run the derive step first: `profiles/legacy-modernization/docs/stacks/oracle-forms.md`.
 
 **If the logic lives in the database** rather than a repo, that is a
 `kind: database` system. Snapshot it with `python scripts/snapshot_db.py
