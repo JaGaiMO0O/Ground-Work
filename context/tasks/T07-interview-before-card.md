@@ -1,6 +1,6 @@
 # T07 - Survey skills interview a human before writing a card
 
-Status: ready
+Status: done
 Wave: 2
 Depends on: T04
 Build: build-0.1A
@@ -126,15 +126,89 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: the single `docs(T07): interview before writing a card` commit on
+branch `T07-interview-before-card` (hash given to the user; a commit cannot
+hold its own hash).
 
 **What changed**
 
+- `.claude/agents/surveyor.md` - steps 1-3. *What to return* now requires
+  `path:N`, `path:N-M` or `schema:OBJECT` on every finding, and
+  `[no line: <grep>]` where a line cannot be pinned (the main agent marks those
+  `(unverified)`). New required final section
+  `## Questions only a human can answer`: 3-5 questions tied to findings, none
+  answerable by grep; always considers outside callers, *Do not read*
+  candidates dead in production, and owner/who to ask. No fixed questionnaire.
+  New *Hard rules* bullet: it is a subagent, cannot ask the user, and returns
+  the questions instead.
+- `.claude/skills/survey-area/SKILL.md` and `context/recipes/survey-area.md` -
+  steps 4-9. Trigger (`description:`) and body/`Use when:` both say: full
+  survey when the area has been worked on in three or more tasks and its card
+  is missing or partial, or when someone asks; below that, landmines go onto a
+  partial card as they are met. New `## Ask before you write` section between
+  the reading and *Filling the card*. *Filling the card* gains the recording
+  rules (C1 citations, `(per NAME, YYYY-MM-DD)` answers, `## Open questions` +
+  `(unverified)`, C2 *Do not read* reasons, list never applies to bug or
+  slowdown work) and the instruction to set `survey: true` in `project.yaml`
+  when the card is complete. *Done when* gains: every claim cited or
+  `(unverified)`, open questions recorded, card within 2,500 tokens.
+  "Never survey the same area twice" replaced with: do not re-survey from
+  scratch; corrections are edits, each with a citation opened in that session.
+- `profiles/legacy-modernization/scaffold/.claude/skills/survey-system/SKILL.md`
+  and `.../context/recipes/survey-system.md` - step 10: the same, with legacy
+  wording (system, scheduler jobs, other systems) and the citation rules for
+  Forms/binaries by their `derived/` file, database logic as `schema:OBJECT`,
+  `kind: repo` paths relative to that repository's root. Seams instructions
+  untouched. The recipe had no *Filling the card* heading; one was added before
+  *Done when* to hold the recording rules. `Do NOT load` kept in both recipes.
+
+Notes on wording choices, all inside the listed files:
+- The shipped skills and recipes state the contract rules inline rather than
+  citing "C1"-"C4": those labels live in `context/tasks/README.md`, which never
+  travels into a project (T01), so a label would dangle there.
+- Step 7 adds a `project.yaml` write, so each file's "only output(s)" session
+  rule now also names the area's/system's `survey:` line - otherwise the two
+  instructions contradict each other.
+- The edits-not-re-surveys line (step 8) is also in both recipes, since each
+  skill says its recipe is canonical and wins on disagreement.
+
 **Verify output**
+
+```
+$ python scripts/check.py
+ok   all invariants hold                       -> exit 0
+$ grep -rn "Questions only a human can answer" <the five files>
+.claude/agents/surveyor.md:28, :59, :69
+.claude/skills/survey-area/SKILL.md:63, :72
+context/recipes/survey-area.md:47, :56
+.../scaffold/.claude/skills/survey-system/SKILL.md:62, :72
+.../scaffold/context/recipes/survey-system.md:41, :52
+$ grep -rn "survey the same area twice" .claude context/recipes profiles
+(nothing, exit 1)   - also nothing for "survey the same system twice"
+$ grep -n "Do NOT load" <both recipes>
+context/recipes/survey-area.md:30
+.../scaffold/context/recipes/survey-system.md:31
+$ python tests/invariants.py --only recipe
+recipe lacks 'Do NOT load'   1  1  ok      1/1 passed
+```
 
 **Deviation requests**
 
+None. One environment note: the worktree was created from `1a79a04`, eight
+commits behind `main` (no `context/tasks/` at all, so T04's status could not be
+checked). The branch was a strict ancestor of `main`, so it was fast-forwarded
+to `main` (`d0c3f9f`) before any edit - no file of this task changed by it,
+and `main` itself was not touched. T04 shows `Status: accepted` there.
+
 **Found, not fixed**
+
+- `docs/playbook.md:249` still says "Never survey the same area twice" (step 8
+  says leave it; T08/T11 own the playbook).
+- `.claude/agents/surveyor.md:21-25` (binary rule) points to
+  `docs/stacks/oracle-forms.md`, which does not exist in the general template
+  (`docs/stacks/` is absent at the repo root); `project.yaml:133-137` has the
+  `derive:` block only as a comment. A general-profile project following that
+  pointer finds nothing.
 
 ---
 
