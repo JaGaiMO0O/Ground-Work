@@ -25,7 +25,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 GUARD = REPO / "scripts" / "hooks" / "guard.py"
-TMP = Path(tempfile.gettempdir()) / "guard-tests"
+TMP = Path(tempfile.gettempdir()) / f"guard-tests-{os.getpid()}"
 
 BLOCK, WARN, SILENT = "block", "warn", "silent"
 

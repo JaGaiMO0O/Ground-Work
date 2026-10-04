@@ -1,6 +1,6 @@
 # T00 - Make the test harnesses parallel-safe and Python 3.8-safe
 
-Status: ready
+Status: done
 Wave: 0
 Depends on: none
 Build: build-0.1A
@@ -95,15 +95,55 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: the `test(T00)` commit on branch `claude/kind-villani-c2858e`. The hash
+cannot sit in the commit it names, so it went to the user.
 
 **What changed**
 
-**Verify output**
+- `tests/adopt.py`, `tests/invariants.py`: `nuke()` passes `onexc=force` on
+  3.12+ and `onerror=force` below that. `force` is unchanged.
+- `BASE` is now `adopt-harness-{pid}` / `invariant-harness-{pid}`. `PRISTINE` and
+  `WORK` (and the per-case `WORK` in `fresh()`) still derive from `BASE`.
+- `--keep` prints `kept: <BASE>` before the closing rule, so the
+  `N/N passed` line stays last.
+- `tests/hooks.py`: `TMP` is now `guard-tests-{pid}`. Steps 3 and 4 do not apply:
+  it has no `--keep` flag and no `rmtree`.
+- No cases added, renamed or changed.
+
+**Verify output** (Python 3.12.10, Windows 11)
+
+```
+python tests/invariants.py   -> 39/39 passed in 93s
+python tests/hooks.py        -> 21/21 passed
+python tests/adopt.py        -> 22/22 passed in 56s
+two adopt.py at once (11:29:07 -> 11:30:13, so they overlapped):
+  /tmp/a1.txt -> 22/22 passed in 65s
+  /tmp/a2.txt -> 22/22 passed in 65s
+  no adopt-harness-* left in %TEMP% afterwards
+adopt.py --only "undo keeps" --keep  -> kept: ...\Temp\adopt-harness-16400, 1/1 passed
+invariants.py --only derived --keep  -> kept: ...\Temp\invariant-harness-22160, 1/1 passed
+grep onexc= tests/           -> only the two calls inside the version check
+py -0                        -> 3.14, 3.12 only
+```
+
+No Python below 3.12 is installed, so the `onerror=` branch has not been run.
+Nothing was installed.
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- `tests/hooks.py:57-62`: nothing ever deletes `TMP`. With a fixed name, one
+  folder got reused. With the PID in the name, every run now leaves its own
+  `guard-tests-<pid>/` with a ~176KB `big.py` in it, and they pile up in `%TEMP%`.
+- "Why" above says each suite deletes its temp dir on start. `tests/hooks.py`
+  never does. Only `adopt.py` and `invariants.py` do.
+- Old fixed-name dirs from earlier runs stay in `%TEMP%` (`guard-tests` is still
+  there). They are left alone, per "Do not".
+- 3.8 support is only checked for `rmtree`. No 3.8 interpreter has run any of
+  the three suites.
 
 ---
 

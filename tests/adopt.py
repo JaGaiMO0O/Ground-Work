@@ -36,7 +36,7 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-BASE = Path(tempfile.gettempdir()) / "adopt-harness"
+BASE = Path(tempfile.gettempdir()) / f"adopt-harness-{os.getpid()}"
 
 LEGACY_PROFILE = "legacy-modernization"
 
@@ -62,7 +62,10 @@ def nuke(path: Path):
         if not path.exists():
             return
         try:
-            shutil.rmtree(path, onexc=force)
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(path, onexc=force)
+            else:
+                shutil.rmtree(path, onerror=force)
         except OSError:
             time.sleep(0.3)
 
@@ -525,7 +528,9 @@ def main() -> int:
             for line in output.strip().splitlines()[:16]:
                 print("   " + line, flush=True)
 
-    if not args.keep:
+    if args.keep:
+        print(f"kept: {BASE}", flush=True)
+    else:
         nuke(BASE)
     print("-" * 76, flush=True)
     print(
