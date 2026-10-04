@@ -223,6 +223,11 @@ def build_package_array(i):
     return make(i, use_git=True, extra={"package.json": "[]\n"})
 
 
+def build_package_null_scripts(i):
+    return make(i, use_git=True,
+                extra={"package.json": '{"name": "x", "scripts": null}\n'})
+
+
 # --- assertions ------------------------------------------------------------
 # Each returns "" for pass, or a sentence naming what was wrong.
 
@@ -354,11 +359,11 @@ def no_live_content(target, _before, after, _out):
                 if k.startswith(folder) and not k.rsplit("/", 1)[1].startswith("_")]
         if live:
             return f"non-template {what} travelled: {sorted(live)[:3]}"
-    # Ground Work's own task log. Tracked, so asking git does not keep it home -
-    # only the explicit exclusion does.
-    tasks = [k for k in after if k.startswith("context/tasks/")]
-    if tasks:
-        return f"our task log travelled: {sorted(tasks)[:3]}"
+    # Ground Work's own plan - roadmap, decisions, briefs. Tracked, so asking
+    # git does not keep it home - only the explicit exclusion does.
+    plan = [k for k in after if k.startswith("docs/plan/")]
+    if plan:
+        return f"our plan travelled: {sorted(plan)[:3]}"
     for wanted in ("context/handoffs/_TEMPLATE.md", "docs/decisions/_TEMPLATE.md"):
         if wanted not in after:
             return f"{wanted} should have travelled and did not"
@@ -694,6 +699,7 @@ CASES = [
     ("detect pytest via pyproject tests dir", build_pyproject_tests_dir, FILLED,                 0, command_detected("  test: pytest")),
     ("detect maven wrapper",            build_maven_wrapper, FILLED,                             0, command_detected("  test: ./mvnw test")),
     ("package.json array no crash",     build_package_array, FILLED,                             0, project_yaml_written),
+    ("package.json null scripts keeps install", build_package_null_scripts, FILLED,           0, command_detected("  install: npm ci")),
 ]
 
 
