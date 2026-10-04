@@ -28,9 +28,21 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 GUARD = REPO / "scripts" / "hooks" / "guard.py"
+sys.path.insert(0, str(REPO / "scripts"))
+import _transcripts  # noqa: E402
 TMP = Path(tempfile.gettempdir()) / f"guard-tests-{os.getpid()}"
 
 BLOCK, WARN, SILENT = "block", "warn", "silent"
+
+# How Claude Code names a project's folder under ~/.claude/projects. A wrong slug
+# means usage.py finds no transcripts and reports "no telemetry", not an error.
+SLUG_CASES = [
+    (r"C:\Users\me\Desktop\RedKeys\Name_Screening",
+     "C--Users-me-Desktop-RedKeys-Name-Screening"),
+    (r"C:\Users\me\Desktop\Legacy Modernization",
+     "C--Users-me-Desktop-Legacy-Modernization"),
+    ("/home/me/my_proj (copy)", "-home-me-my-proj--copy-"),
+]
 
 
 def fire(payload: dict) -> str:
@@ -229,8 +241,13 @@ def main() -> int:
               f"  [bash: {bash or 'none'}]")
         if why:
             print(f"  {why}")
+    for given, want in SLUG_CASES:
+        got = _transcripts._slug(Path(given))
+        good = got == want
+        failures += 0 if good else 1
+        print(f"{'slug: ' + given:34} {got:>7} {want:>7}  {'ok' if good else 'FAILED'}")
 
-    total = len(cases) + len(wiring)
+    total = len(cases) + len(wiring) + len(SLUG_CASES)
     print("-" * 66)
     print(f"{total - failures}/{total} passed")
     if not long_session:

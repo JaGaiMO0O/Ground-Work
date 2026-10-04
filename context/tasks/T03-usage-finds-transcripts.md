@@ -1,6 +1,6 @@
 # T03 - Make usage.py find a project's transcripts from any path
 
-Status: ready
+Status: done
 Wave: 2
 Depends on: T00, T02
 Build: build-0.1A
@@ -115,15 +115,85 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: the single `fix(T03)` commit on branch `T03-usage-finds-transcripts`
+(this Report is part of that commit, so it cannot hold its own hash. The hash
+went to the user.)
 
 **What changed**
 
+- `scripts/_transcripts.py` `_slug()`: `re.sub(r"[^A-Za-z0-9]", "-", str(path))`
+  on the path as given, with no `resolve()`. The docstring states the observed
+  rule and cites `Name_Screening`.
+- `scripts/_transcripts.py` `project_dirs_for()`: candidates are `cwd.absolute()`,
+  then `cwd.resolve()` if it differs. The exact slug of each is tried in that order.
+  The fallback passes each recorded `cwd` through `native_path()` and compares it
+  against every candidate, case-insensitively, with `\` equal to `/`. It reads up
+  to 5 `.jsonl` per folder and stops at the first one that yields a `cwd`.
+- `tests/hooks.py`: `SLUG_CASES` (3 cases) runs after the wiring cases, in the
+  same print format, and counts toward the total. `_transcripts` is imported via
+  `sys.path` from `scripts/`.
+- Nothing else in `_transcripts.py` changed. `usage.py` and `status.py` are untouched.
+
 **Verify output** (include the real-data check output in full)
+
+Setup: the app created this worktree from `1a79a04`, which is older than `main`
+and has no `context/tasks/`. The branch had no commits, so I ran
+`git merge --ff-only main` (to `d0c3f9f`) before starting. After that, T00 and
+T02 showed `Status: accepted`.
+
+`python tests/hooks.py` (Windows, Python 3.12.10, Git Bash):
+baseline before the change was `23/23 passed`. After:
+
+```
+hook wiring: read .env              exit 2  exit 2  ok  [bash: C:\Program Files\Git\bin\bash.exe]
+hook wiring: read README.md         exit 0  exit 0  ok  [bash: C:\Program Files\Git\bin\bash.exe]
+slug: C:\Users\me\Desktop\RedKeys\Name_Screening C--Users-me-Desktop-RedKeys-Name-Screening C--Users-me-Desktop-RedKeys-Name-Screening  ok
+slug: C:\Users\me\Desktop\Legacy Modernization C--Users-me-Desktop-Legacy-Modernization C--Users-me-Desktop-Legacy-Modernization  ok
+slug: /home/me/my_proj (copy)      -home-me-my-proj--copy- -home-me-my-proj--copy-  ok
+------------------------------------------------------------------
+26/26 passed
+```
+
+`python scripts/usage.py --all | head -6`, before and after are identical:
+
+```
+  136 session(s) across 41 project(s)   [137 transcript file(s) read]
+```
+
+Real-data check, full output:
+
+```
+no cwd   C--Users-myaghmour-Downloads-OptimizaIPsHub
+41 match, 0 mismatch
+```
+
+The `no cwd` folder holds only a `memory/` directory and no `.jsonl`, so there is
+no transcript to match. It is not a mismatch.
+
+Extra spot check (not in Verify): `project_dirs_for()` returns this worktree's
+folder for `Path.cwd()` and for `Path(".")`, and returns the main checkout's
+folder for `C:/Users/myaghmour/Desktop/Legacy Modernization`. With the exact
+slug forced to miss, the fallback still finds this worktree's folder.
+
+`python scripts/check.py`: `ok   all invariants hold`.
 
 **Deviation requests**
 
+None. The `--ff-only` sync to `main` was branch setup, not a file change. No file
+outside the list was touched.
+
 **Found, not fixed**
+
+- Worktree base: the app started this wave-2 worktree from `1a79a04`, not from
+  `main` (`d0c3f9f`). Other wave-2 worktrees may have the same stale base. For
+  example, `T05-check-enforces-card-contracts` also showed `1a79a04` in
+  `git worktree list`.
+- `tests/hooks.py` print format: the `got`/`want` columns are 7 characters wide,
+  so the long slug values overflow them and the slug rows do not line up. The
+  output is cosmetic only; the pass/fail result is correct.
+- `scripts/_transcripts.py` `project_dirs_for()` fallback: `candidate.glob("*.jsonl")`
+  is unsorted, so which 5 files are checked depends on filesystem order. The
+  brief did not ask for sorting, so I left it as written.
 
 ---
 

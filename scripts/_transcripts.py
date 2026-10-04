@@ -71,11 +71,13 @@ def native_path(recorded: str) -> Path:
 
 
 def _slug(path: Path) -> str:
-    """~/.claude/projects uses a flattened form of the working directory."""
-    text = str(path.resolve())
-    for char in (":", "\\", "/", " ", "."):
-        text = text.replace(char, "-")
-    return text
+    """~/.claude/projects uses a flattened form of the working directory.
+
+    Observed Claude Code rule: every non-alphanumeric character becomes `-`, on
+    the path as given - logical, never resolved. `Desktop/RedKeys/Name_Screening`
+    is stored as `C--Users-myaghmour-Desktop-RedKeys-Name-Screening`.
+    """
+    return re.sub(r"[^A-Za-z0-9]", "-", str(path))
 
 
 # ---------------------------------------------------------------------------
@@ -168,18 +170,30 @@ def project_dirs_for(cwd: Path) -> "list[Path]":
     if not PROJECTS_DIR.is_dir():
         return []
 
-    exact = PROJECTS_DIR / _slug(cwd)
-    if exact.is_dir():
-        return [exact]
+    # Claude Code records the logical cwd; try it before the symlink-resolved one.
+    paths = [cwd.absolute()]
+    resolved = cwd.resolve()
+    if resolved != paths[0]:
+        paths.append(resolved)
 
-    wanted = str(cwd.resolve()).lower()
+    for path in paths:
+        exact = PROJECTS_DIR / _slug(path)
+        if exact.is_dir():
+            return [exact]
+
+    def norm(path: Path) -> str:
+        return str(path).replace("\\", "/").lower()
+
+    wanted = {norm(path) for path in paths}
     found = []
     for candidate in sorted(PROJECTS_DIR.iterdir()):
         if not candidate.is_dir():
             continue
-        for jsonl in candidate.glob("*.jsonl"):
+        for jsonl in list(candidate.glob("*.jsonl"))[:5]:
             recorded = _peek_cwd(jsonl)
-            if recorded and recorded.lower() == wanted:
+            if not recorded:
+                continue
+            if norm(native_path(recorded)) in wanted:
                 found.append(candidate)
             break
     return found
