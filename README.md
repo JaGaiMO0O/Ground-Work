@@ -57,8 +57,8 @@ time, and keeps anything you have edited since.
 
 ## Testing this build
 
-This is **build 0A** - version 0, alpha, and the first build handed to anyone
-outside its author. If you are one of the internal testers,
+This is an alpha build, handed to testers outside its author. Quote the output
+of `git describe --tags` in any report - it names the build. If you are one of the internal testers,
 **[TESTING.md](TESTING.md)** is your brief: what to exercise, what a correct
 result looks like, and how to file what you find.
 
@@ -75,7 +75,7 @@ own repositories; redistribution and disclosure outside Optimiza are not
 permitted.
 
 A project you scaffold with `init.py` is yours: `init.py` deletes this
-licence, `TESTING.md` and `.gitlab/` on the way out, because all three describe
+licence, `TESTING.md` and `context/tasks/` on the way out, because all three describe
 the template rather than your work.
 
 <!-- END TEMPLATE ONLY -->
