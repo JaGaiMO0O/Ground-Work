@@ -1,6 +1,5 @@
 # T04 - Card templates and examples: citations, skip reasons, open questions
 
-Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A

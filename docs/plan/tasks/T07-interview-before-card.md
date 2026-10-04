@@ -1,6 +1,5 @@
 # T07 - Survey skills interview a human before writing a card
 
-Status: accepted
 Wave: 2
 Depends on: T04
 Build: build-0.1A

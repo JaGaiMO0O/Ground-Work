@@ -1,6 +1,5 @@
 # T03 - Make usage.py find a project's transcripts from any path
 
-Status: accepted
 Wave: 2
 Depends on: T00, T02
 Build: build-0.1A

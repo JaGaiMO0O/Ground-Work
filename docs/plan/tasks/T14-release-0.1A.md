@@ -1,8 +1,9 @@
 # T14 - Prepare the build-0.1A release
 
-Status: ready
 Wave: 6
 Depends on: T13
+Lane: Release
+Estimate: S (~30 min)
 Build: build-0.1A
 
 ## Goal
@@ -20,13 +21,13 @@ currently asks testers whether `usage.py` numbers "match their experience" - an
 opinion, not a measurement. The last tester never reported back, so the evidence
 has to be cheap to produce: two command runs, no writing.
 
-## Files you may change
+## Owns
 
 - `TESTING.md`
 - `RUNBOOK.md` - the *Open defects* list and *Known rough edges* only
 - `STATUS.md` - human zone, and the generated zone by running `scripts/status.py`
 - `context/handoffs/<today>-build-0-1a-release.md` - new, via `scripts/handoff.py`
-- `context/tasks/T14-release-0.1A.md` - Report section and Status line only
+- `docs/plan/tasks/T14-release-0.1A.md` - Handoff only
 
 ## Do exactly this
 
@@ -40,8 +41,8 @@ has to be cheap to produce: two command runs, no writing.
    - Say plainly why: this is the evidence the project does not yet have, and a
      missing "after" file leaves the question open.
 2. **RUNBOOK.md, Open defects**: remove the test-command detection entry and the
-   `scan.py` false-positive entry **only if** T10 and T12 are `accepted` - check
-   their `Status:` lines. Add to *Known rough edges*: cards written under
+   `scan.py` false-positive entry **only if** T10 and T12 are `Merged` in
+   `docs/plan/ROADMAP.md`. Add to *Known rough edges*: cards written under
    `build-0A` carry no citations and now fail `check.py`; add citations or mark
    claims `(unverified)`; there is no `--update` yet.
 3. **STATUS.md**, human zone: **Now** - `build-0.1A ready for a small rollout.`
@@ -50,7 +51,7 @@ has to be cheap to produce: two command runs, no writing.
    and the blockers' text unchanged. Run `python scripts/status.py`.
 4. **Handoff**: `python scripts/handoff.py "build 0.1A release"`, then fill it in:
    - *Goal*: release 0.1A.
-   - *Done*: one line per task T00-T12 with its commit hash (from `git log`);
+   - *Done*: one line per task T00-T16 with its commit hash (from `git log`);
      T13's summary line.
    - *Open*: every item under T13's *Found, not fixed*; the deferred list -
      `--update`; `.ps1` adapters on macOS; `CLAUDE_CONFIG_DIR`; nested `.csproj`;
@@ -59,11 +60,11 @@ has to be cheap to produce: two command runs, no writing.
      claim; on Windows, if `python` is missing but the Microsoft Store
      `python3` stub is on PATH, the hooks run the stub and fail visibly
      without blocking (found by T02).
-   - *Gotcha*: copy the most important line from T13's Report.
+   - *Gotcha*: copy the most important line from T13's Handoff.
    - *Next*: rollout with at least one Mac and one Java/Maven project; the
      original tester's re-test; the directory rename.
 5. **Do not create the tag.** You are in a worktree; a tag made here would mark
-   your branch, not `main`. Write the exact command in Report -
+   your branch, not `main`. Write the exact command in Handoff -
    `git tag -a build-0.1A -m "Build 0.1A - version 0.1, alpha"` - and the lead
    creates it on `main` after merging this task, only on the user's go-ahead.
 
@@ -71,14 +72,14 @@ has to be cheap to produce: two command runs, no writing.
 
 - Push anything, or create a tag.
 - Change Tracks A-C of TESTING.md.
-- Remove an Open defects entry whose fixing task is not `accepted`.
+- Remove an Open defects entry whose fixing task is not `Merged` in the roadmap.
 
 ## Acceptance criteria
 
 - [ ] Track D asks for two `usage.py --path` files and explains why.
 - [ ] `check.py` exits 0; `status.py --check` up to date.
 - [ ] The handoff lists every task with its commit.
-- [ ] No tag created by this task; the tag command is in Report.
+- [ ] No tag created by this task; the tag command is in Handoff.
 
 ## Verify
 
@@ -93,30 +94,30 @@ git tag -l "build-0.1A"              # expected: nothing - the lead tags main
 
 ```
 docs(T14): prepare build-0.1A release
+
 - Track D measures usage before and after
 - RUNBOOK, STATUS and handoff for 0.1A
 ```
 
-No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
+No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 ---
 
-## Report
+## Handoff
 
-<!-- Worker fills this in. The header Status: line is the only status. -->
+<!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Commit:
+Branch / commit:
 
 **What changed**
 
-**Verify output**
+**How it was verified**
 
-**Tag command for the lead**
+**Deviations** (escalations raised, and the answers)
 
-**Deviation requests**
+**Follow-ups** (found, not fixed - file and line)
 
-**Found, not fixed**
-
+**Rollback**
 ---
 
 ## Lead review

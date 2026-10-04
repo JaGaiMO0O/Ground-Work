@@ -1,6 +1,5 @@
 # T08 - AGENTS.md, playbook and trace-field: a card is a map, not the truth
 
-Status: done
 Wave: 3
 Depends on: T05, T07
 Build: build-0.1A

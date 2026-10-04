@@ -1,6 +1,5 @@
 # T05 - check.py enforces the card contracts; budget 2,500
 
-Status: accepted
 Wave: 2
 Depends on: T04
 Build: build-0.1A

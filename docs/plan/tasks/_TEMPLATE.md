@@ -1,8 +1,9 @@
 # Txx - <short imperative title>
 
-Status: ready
 Wave: <n>
 Depends on: <Txx, Txx | none>
+Lane: <lane>
+Estimate: <S | M | L, with a time>
 Build: build-0.1A
 
 ## Goal
@@ -13,12 +14,12 @@ Build: build-0.1A
 
 <1-3 lines, with the evidence: a file and line, a review finding, a measurement.>
 
-## Files you may change
+## Owns
 
-<Exhaustive. Anything not listed here is a deviation - see context/tasks/README.md.>
+<Exhaustive. Anything not listed here is a deviation - see docs/plan/PROTOCOL.md.>
 
 - `<path>`
-- `context/tasks/Txx-<slug>.md` - Report section and Status line only
+- `docs/plan/tasks/Txx-<slug>.md` - Handoff only
 
 ## Do exactly this
 
@@ -43,27 +44,29 @@ Build: build-0.1A
 
 ```
 <type>(Txx): <description, <= 50 chars>
+
 - <bullet>
 ```
 
-No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
+No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 ---
 
-## Report
+## Handoff
 
-<!-- Worker fills this in. The header Status: line is the only status. -->
+<!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Commit:
+Branch / commit:
 
 **What changed**
 
-**Verify output**
+**How it was verified**
 
-**Deviation requests** (what was asked, what was answered)
+**Deviations** (escalations raised, and the answers)
 
-**Found, not fixed**
+**Follow-ups** (found, not fixed - file and line)
 
+**Rollback**
 ---
 
 ## Lead review

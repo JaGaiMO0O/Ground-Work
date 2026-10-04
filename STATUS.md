@@ -19,7 +19,7 @@ Known defects are in `RUNBOOK.md` under *Open defects*.
 
 | | |
 |---|---|
-| **Now** | Build 0.1A in progress - task briefs in `context/tasks/`. Then a small rollout, measured with `usage.py --all` before and after. |
+| **Now** | Build 0.1A in progress - plan and status in `docs/plan/ROADMAP.md`. Then a small rollout, measured with `usage.py --all` before and after. |
 | **Next** | A week of ordinary work on an adopted project, re-measured against its baseline. Three trials proved adoption is safe; none tested whether it helps. |
 | **Done means** | Someone who has not used an agent well before runs `init.py`, follows `START-HERE.md` unaided, and their next session is measurably cheaper on `usage.py`. |
 
@@ -64,13 +64,13 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-10-04 10:37 UTC
-Branch:       T09-docs-drift-and-build-label @ 6d41925 (2026-10-04), 5 uncommitted change(s)
-              "docs(tasks): accept wave 2; add T15 - T03, T05, T06, T07 accepted and..."
+Generated:    2026-10-04 13:33 UTC
+Branch:       main @ e47827f (2026-10-04), 24 uncommitted change(s)
+              "docs(lead): fix dangling stacks pointers"
 Validation:   clean
 Last handoff: 2026-09-03-build-0a-tester-handover.md
               Next: 1. Authorize the Atlassian MCP (installed, not yet authorized - OAuth...
 Areas:        4 declared, 0 with a card
-Budget:       cache 96%; peak context 80k; orientation 0%   -> python scripts/usage.py
+Budget:       cache 97%; peak context 761k; orientation 11%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->

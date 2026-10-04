@@ -1,6 +1,5 @@
 # T15 - The skip-list reference check asks git; interview dates must be real
 
-Status: done
 Wave: 3
 Depends on: T05
 Build: build-0.1A

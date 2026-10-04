@@ -1,6 +1,5 @@
 # T09 - Remove the Teams-switch drift; derive the build label in docs
 
-Status: done
 Wave: 3
 Depends on: T02, T06
 Build: build-0.1A

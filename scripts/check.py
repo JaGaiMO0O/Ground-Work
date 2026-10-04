@@ -235,8 +235,9 @@ def card_gaps(text: str, extra_sections: "list[str]"):
     return missing_sections, missing_fields
 
 
-# Contracts C1-C3 live in context/tasks/README.md. The forms a claim may be
-# cited with, and the blanks that are not claims at all.
+# Contracts C1-C3 are taught by map/_TEMPLATE/CARD.md, which travels with the
+# scaffold. Below: the forms a claim may be cited with, and the blanks that are
+# not claims at all.
 CITE_PATH = re.compile(r"`([^`\s]+):(\d+)(?:-(\d+))?`")
 CITE_OTHER = re.compile(r"`schema:[^`\s]+`|\(unverified\)")
 # A person's word counts only on a real date: 2026-99-99 is the right shape.

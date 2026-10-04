@@ -1,6 +1,5 @@
 # T02 - Make the guardrail hooks find Python on any OS, and test the real wiring
 
-Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A

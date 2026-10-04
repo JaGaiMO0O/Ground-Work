@@ -1,6 +1,5 @@
 # T00 - Make the test harnesses parallel-safe and Python 3.8-safe
 
-Status: accepted
 Wave: 0
 Depends on: none
 Build: build-0.1A

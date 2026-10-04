@@ -1,6 +1,5 @@
 # T10 - Detect the test command adoption has been missing; first detection tests
 
-Status: done
 Wave: 3
 Depends on: T01, T05, T06
 Build: build-0.1A

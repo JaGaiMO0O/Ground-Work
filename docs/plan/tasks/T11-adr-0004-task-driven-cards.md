@@ -1,8 +1,9 @@
 # T11 - ADR 0004: cards grow from tasks; stop telling people to survey up front
 
-Status: ready
 Wave: 4
 Depends on: T05, T07, T08
+Lane: Workflow
+Estimate: M (~1 h)
 Build: build-0.1A
 
 ## Goal
@@ -32,14 +33,14 @@ places push a survey first:
 Rolling out with those instructions would have testers pay for the expensive
 workflow the review just measured, and measure the wrong thing.
 
-## Files you may change
+## Owns
 
 - `docs/decisions/0004-task-driven-cards.md` - new
 - `scripts/init.py` - the adopt "Next" message string only
 - `scripts/new_card.py` - the post-write messages only (`:84-91`)
 - `docs/playbook.md` - only the paragraphs named in step 3
 - `.claude/skills/onboard/SKILL.md`
-- `context/tasks/T11-adr-0004-task-driven-cards.md` - Report section and Status line only
+- `docs/plan/tasks/T11-adr-0004-task-driven-cards.md` - Handoff only
 
 ## Do exactly this
 
@@ -125,36 +126,38 @@ python scripts/check.py                                         # expected: exit
 python tests/adopt.py                                           # expected: all pass
 # new_card.py on a survey:false area - in a throwaway copy, not this repo:
 #   declare an area with survey: false, run python scripts/new_card.py <area>,
-#   paste the output into Report.
+#   paste the output into Handoff.
 ```
 
 ## Commit
 
 ```
 docs(T11): grow cards from tasks (ADR 0004)
+
 - Record ADR 0004
 - Remove five "survey up front" instructions
 - new_card.py and onboard expect partial cards
 ```
 
-No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
+No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 ---
 
-## Report
+## Handoff
 
-<!-- Worker fills this in. The header Status: line is the only status. -->
+<!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Commit:
+Branch / commit:
 
 **What changed**
 
-**Verify output**
+**How it was verified**
 
-**Deviation requests**
+**Deviations** (escalations raised, and the answers)
 
-**Found, not fixed**
+**Follow-ups** (found, not fixed - file and line)
 
+**Rollback**
 ---
 
 ## Lead review

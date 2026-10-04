@@ -1,8 +1,9 @@
 # T12 - scan.py stops flagging code as a password; give it a test suite
 
-Status: ready
 Wave: 4
 Depends on: T02, T05, T09
+Lane: Scan
+Estimate: S (~30 min)
 Build: build-0.1A
 
 ## Goal
@@ -25,14 +26,14 @@ gets switched off.
 Every `.sh` shim and adapter is committed as mode `100644`, so
 `./scripts/check.sh` fails with "permission denied" on macOS and Linux.
 
-## Files you may change
+## Owns
 
 - `scripts/scan.py` - the `password-property` filtering only
 - `tests/scan.py` - new
 - `project.yaml` - one line under `commands:`
 - `RUNBOOK.md` - the *Test* section only
 - file modes of `scripts/*.sh` and `scripts/adapters/**/*.sh` (no content changes)
-- `context/tasks/T12-scan-false-positive.md` - Report section and Status line only
+- `docs/plan/tasks/T12-scan-false-positive.md` - Handoff only
 
 ## Do exactly this
 
@@ -48,7 +49,7 @@ Every `.sh` shim and adapter is committed as mode `100644`, so
    `scan.regex_scan(<temp dir>)`, asserting on the rule names it returns. If
    `regex_scan` cannot see files in a plain temp directory (for example because it
    lists files through git), initialise a git repo there and add the files - and
-   say so in Report. Cases, each a one-line `.py` file:
+   say so in Handoff. Cases, each a one-line `.py` file:
 
    | Case | Line | Expect |
    |---|---|---|
@@ -79,7 +80,7 @@ Every `.sh` shim and adapter is committed as mode `100644`, so
 ## Acceptance criteria
 
 - [ ] The three code-expression cases fail before step 1 and pass after - say
-      so in Report.
+      so in Handoff.
 - [ ] `tests/scan.py`: **6/6**.
 - [ ] `git ls-files -s scripts/*.sh` shows mode `100755` for every shim.
 - [ ] `check.py` exits 0 (the runbook documents `test-scan`).
@@ -90,36 +91,38 @@ Every `.sh` shim and adapter is committed as mode `100644`, so
 python tests/scan.py                        # expected: 6/6 passed
 python scripts/check.py                     # expected: exit 0
 git ls-files -s scripts/*.sh scripts/adapters   # expected: 100755 on every .sh
-python scripts/scan.py                      # runs; record its output in Report
+python scripts/scan.py                      # runs; record its output in Handoff
 ```
 
 ## Commit
 
 ```
 fix(T12): stop flagging code as a password
+
 - Expressions are not literal secrets
 - Add tests/scan.py, declared as test-scan
 - Make .sh shims and adapters executable
 ```
 
-No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
+No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 ---
 
-## Report
+## Handoff
 
-<!-- Worker fills this in. The header Status: line is the only status. -->
+<!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Commit:
+Branch / commit:
 
 **What changed**
 
-**Verify output**
+**How it was verified**
 
-**Deviation requests**
+**Deviations** (escalations raised, and the answers)
 
-**Found, not fixed**
+**Follow-ups** (found, not fixed - file and line)
 
+**Rollback**
 ---
 
 ## Lead review

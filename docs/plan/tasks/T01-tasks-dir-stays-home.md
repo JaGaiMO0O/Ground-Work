@@ -1,6 +1,5 @@
 # T01 - Only template files travel: ask git, and keep context/tasks/ home
 
-Status: accepted
 Wave: 1
 Depends on: T00
 Build: build-0.1A

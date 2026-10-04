@@ -681,7 +681,7 @@ CASES = [
     ("STATUS.template.md deleted",     m_status_template_gone,      2, "STATUS.template.md is missing", False),
     ("RUNBOOK omits a command",        m_runbook_missing_command,   2, "does not mention the 'test'",   False),
     ("RUNBOOK missing",                m_runbook_missing,           2, "RUNBOOK.md is missing",         False),
-    # card contracts C1-C3 (context/tasks/README.md)
+    # card contracts C1-C3 (docs/plan/PROTOCOL.md)
     ("card claim uncited",             m_claim_uncited,             1, "claim has no citation",         False),
     ("claim marked unverified   [+]",  m_claim_unverified,          0, "",                              False),
     ("claim cited per person    [+]",  m_claim_per_person,          0, "",                              False),

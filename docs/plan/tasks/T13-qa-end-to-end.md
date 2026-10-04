@@ -1,8 +1,9 @@
 # T13 - QA: verify build 0.1A end to end, and report
 
-Status: ready
 Wave: 5
-Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T15
+Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T15, T16
+Lane: QA
+Estimate: L (~2 h)
 Build: build-0.1A
 
 ## Goal
@@ -17,9 +18,9 @@ reading it: the undo, the hooks, `usage.py` paths, the test detection. The suite
 prove each rule in isolation; this proves the pieces work together on real
 projects before anyone outside sees them.
 
-## Files you may change
+## Owns
 
-- `context/tasks/T13-qa-end-to-end.md` - Report section and Status line only
+- `docs/plan/tasks/T13-qa-end-to-end.md` - Handoff only
 
 **Nothing else in this repository.** Work only in copies under your system temp
 directory. Do not modify `Desktop/JLGC - Copy` or any other real project - copy
@@ -28,12 +29,12 @@ fixed* with exact reproduction steps. The lead turns it into a task.
 
 ## Do exactly this
 
-Record every step's command and result in Report, as a table:
+Record every step's command and result in Handoff, as a table:
 **check · result · evidence**.
 
 1. **Regression.** In this repo: `python scripts/check.py`, then
    `tests/invariants.py` (expect 51), `tests/hooks.py` (26), `tests/adopt.py`
-   (31), `tests/scan.py` (6).
+   (32), `tests/scan.py` (6).
 2. **Transcript discovery.** Run the real-data check from T03's *Verify*.
    Expect every folder to match.
 3. **Older Python.** `py -0`. If any Python below 3.12 is installed, run all four
@@ -41,7 +42,7 @@ Record every step's command and result in Report, as a table:
 4. **Fresh project from a clone.** `git clone` this repo (the local path) into a
    temp directory - a clone, so tags come with it. Run
    `python scripts/init.py --project qa --profile general --purpose "verify 0.1A" --done "report written"`.
-   Confirm: `check.py` exits 0; `context/tasks/`, `LICENSE` and `TESTING.md` are
+   Confirm: `check.py` exits 0; `docs/plan/`, `LICENSE` and `TESTING.md` are
    gone; README's first line is `# qa` and contains no clone URL.
 5. **Second-generation adoption.** From that initialised clone, run
    `scripts/init.py --adopt <fresh small git repo> --purpose "second gen" --done "own goal"`.
@@ -59,7 +60,7 @@ Record every step's command and result in Report, as a table:
    write*, **ask the user the questions** - this is the one step in this task that
    needs the human - and record the answers as the skill says. Write the card.
    Confirm `check.py` passes with every claim cited or `(unverified)`, and paste
-   the card into Report.
+   the card into Handoff.
 8. **Scan.** Run `python scripts/scan.py` in the JLGC copy from step 6 before
    undo. Confirm `_NUMERIC_TOKEN = re.compile(` is no longer reported.
 9. **usage.py.** `python scripts/usage.py --all` runs and reports sessions.
@@ -69,20 +70,20 @@ Record every step's command and result in Report, as a table:
 
 ## Do not
 
-- Fix anything. Report it.
-- Edit any file in this repo except your Report.
+- Fix anything. Handoff it.
+- Edit any file in this repo except your Handoff.
 - Use the real `JLGC - Copy` directory instead of a copy.
 
 ## Acceptance criteria
 
-- [ ] Every step 1-10 has a row in the Report table with evidence.
+- [ ] Every step 1-10 has a row in the Handoff table with evidence.
 - [ ] The JLGC undo hash comparison is shown, pass or fail.
 - [ ] The interviewed card is pasted in full.
 - [ ] *Found, not fixed* lists every defect with reproduction steps, or says none.
 
 ## Verify
 
-The steps above are the verification. Summarise at the top of Report:
+The steps above are the verification. Summarise at the top of Handoff:
 `N passed, M failed, K could not verify`.
 
 ## Commit
@@ -95,23 +96,21 @@ Stage only this task file. No `Co-Authored-By` trailer. Never push.
 
 ---
 
-## Report
+## Handoff
 
-<!-- Worker fills this in. The header Status: line is the only status. -->
+<!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Commit:
+Branch / commit:
 
-**Summary**
+**What changed**
 
-**Results**
+**How it was verified**
 
-| Check | Result | Evidence |
-|---|---|---|
+**Deviations** (escalations raised, and the answers)
 
-**Deviation requests**
+**Follow-ups** (found, not fixed - file and line)
 
-**Found, not fixed**
-
+**Rollback**
 ---
 
 ## Lead review

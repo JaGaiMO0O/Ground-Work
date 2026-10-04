@@ -1,6 +1,5 @@
 # T06 - Stop second-generation adoption leaking purpose; stamp the build label
 
-Status: accepted
 Wave: 2
 Depends on: T01
 Build: build-0.1A
