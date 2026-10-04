@@ -70,7 +70,7 @@ NOT_ADOPTED = {"README.md"}
 SKIP_ON_ADOPT_DIRS = {"tests"}
 # Ground Work's own work log. Tracked, so asking git does not keep it home.
 # Must match TEMPLATE_ONLY_DIRS in init.py - plain init deletes the same paths.
-SKIP_ON_ADOPT_PATHS = {"context/tasks"}
+SKIP_ON_ADOPT_PATHS = {"docs/plan"}
 SKIP_ON_ADOPT_FILES = {"scripts/init.py", "scripts/_adopt.py"}
 SHIM_SUFFIXES = {".sh", ".ps1"}
 
@@ -164,10 +164,10 @@ def detect(target: Path) -> Detected:
             data = json.loads(_read(pkg) or "{}")
         except json.JSONDecodeError:
             data = None
-        # Valid JSON is not necessarily an object. A top-level array, or a
-        # `scripts` that is not a mapping, gives us no commands - not a crash.
-        scripts = data.get("scripts", {}) if isinstance(data, dict) else None
-        if isinstance(scripts, dict):
+        # Valid JSON is not necessarily an object. A top-level array gives us
+        # no commands - not a crash. A `scripts` that is not a mapping costs
+        # only the scripts-derived commands: install comes from the lockfile.
+        if isinstance(data, dict):
             runner = "npm run "
             if (target / "pnpm-lock.yaml").is_file():
                 runner = "pnpm "
@@ -177,6 +177,9 @@ def detect(target: Path) -> Detected:
                 "pnpm install" if runner == "pnpm " else
                 "yarn install" if runner == "yarn " else "npm ci"
             )
+            scripts = data.get("scripts", {})
+            if not isinstance(scripts, dict):
+                scripts = {}
             for ours, theirs in (
                 ("test", "test"), ("build", "build"), ("lint", "lint"),
                 ("run", "dev"),

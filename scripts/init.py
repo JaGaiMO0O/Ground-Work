@@ -45,9 +45,9 @@ STATUS_TEMPLATE = ROOT / "STATUS.template.md"
 # file to be honest. --adopt never copies these; only this path could.
 TEMPLATE_ONLY_FILES = ("LICENSE", "TESTING.md")
 # `.gitlab/` lived here until GitLab Issues turned out to be disabled org-wide.
-# `context/tasks/` is Ground Work's own work log, not a project's.
+# `docs/plan/` is Ground Work's own work log, not a project's.
 # Must match SKIP_ON_ADOPT_PATHS in _adopt.py - --adopt skips the same paths.
-TEMPLATE_ONLY_DIRS = ("context/tasks",)
+TEMPLATE_ONLY_DIRS = ("docs/plan",)
 
 PROJECT_TOKEN = "<PROJECT_NAME>"
 # The two Tier 0 lines exactly as the template carries them. Written back when

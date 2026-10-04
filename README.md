@@ -75,7 +75,7 @@ own repositories; redistribution and disclosure outside Optimiza are not
 permitted.
 
 A project you scaffold with `init.py` is yours: `init.py` deletes this
-licence, `TESTING.md` and `context/tasks/` on the way out, because all three describe
+licence, `TESTING.md` and `docs/plan/` on the way out, because all three describe
 the template rather than your work.
 
 <!-- END TEMPLATE ONLY -->

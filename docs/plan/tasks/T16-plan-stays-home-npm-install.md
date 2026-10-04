@@ -103,17 +103,68 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T16-plan-stays-home-npm-install`, one commit
+`fix(T16): keep docs/plan out of new projects` (hash reported to the user;
+a commit cannot name its own hash).
 
 **What changed**
 
+- `scripts/_adopt.py:73` - `SKIP_ON_ADOPT_PATHS = {"docs/plan"}`; the
+  "must match TEMPLATE_ONLY_DIRS" comment kept.
+- `scripts/init.py:48-50` - `TEMPLATE_ONLY_DIRS = ("docs/plan",)`; comment above
+  names `docs/plan/`, cross-reference comment kept. The code that applies it
+  (`template_only_paths()`, the rmtree loop) is generic and needed no change.
+  T11's adopt "Next" block untouched.
+- `scripts/_adopt.py` `detect()`, `package.json` branch - gated on "the file is a
+  JSON object" instead of "`scripts` is an object". Install is set from the
+  lockfile as before (`npm ci` / `yarn install` / `pnpm install`); a non-object
+  `scripts` becomes `{}`, so only the scripts-derived commands are skipped.
+  `package.json` is still recorded in `sources` (unchanged line above). A
+  top-level array still yields no commands (T10's case still passes).
+- `tests/adopt.py` `no_live_content` - **assertion retargeted at the lead's
+  instruction (brief step 3):** the `context/tasks/` check is replaced by a
+  `docs/plan/` check. The old path no longer exists, so the old assertion could
+  not fail. Not a weakening: the new one fails on today's leak (see below).
+- `tests/adopt.py` - new case `package.json null scripts keeps install`
+  (`{"name": "x", "scripts": null}` -> `  install: npm ci`).
+- `README.md:78`, `TESTING.md:106` - `context/tasks/` -> `docs/plan/`.
+
 **How it was verified**
+
+- Baseline before any change: `check.py` all invariants hold; adopt 31/31.
+- Test first: with only the test edits, `--only "no live content"` failed
+  (`our plan travelled: ['docs/plan/DECISIONS.md', ...]`) and
+  `--only "null scripts"` failed (`project.yaml has no 'install: npm ci' line` -
+  install came from requirements.txt instead).
+- After the fix: both 1/1; `--only "package.json array"` 1/1.
+- Revert check: step 1 set back to `{"context/tasks"}` -> `no live content`
+  0/1 with the same leak message; restored -> passes.
+- `python tests/adopt.py` -> 32/32. `python scripts/check.py` -> exit 0.
+- Plain init on a throwaway copy outside the repo (scratchpad): copied
+  `git ls-files` into it, ran
+  `python scripts/init.py --project t --profile general --purpose p --done d`
+  -> `ok removed template-only file(s): LICENSE, TESTING.md, docs/plan/`;
+  `docs/plan` no longer exists; `docs/` keeps adapters.md, antipatterns.md,
+  decisions/, playbook.md, starter-prompt.md.
 
 **Deviations** (escalations raised, and the answers)
 
+- None escalated. One side effect of re-gating the branch: with a non-object
+  `scripts`, a `tsconfig.json` now sets `stack.typed: typescript` (before, the
+  null-scripts case skipped it along with install). It sits inside the
+  `package.json` branch this task owns and is not a command; flagging it for
+  review rather than adding a second condition to preserve the old skip.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- None.
+
 **Rollback**
+
+`git revert <T16 commit>` (or the `--no-ff` merge commit with `-m 1`). It
+restores `context/tasks` in both constants, so `docs/plan/` leaks again, and
+`"scripts": null` drops install again. Self-contained: no data, no migration,
+no other task depends on the new constants.
 
 ---
 

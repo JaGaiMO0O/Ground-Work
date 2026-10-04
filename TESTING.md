@@ -103,7 +103,7 @@ Answer as if it were real - vague answers hide the defects.
 | Line 1 of `AGENTS.md` | your project's name, no `<PROJECT_NAME>`, no mangled punctuation |
 | `README.md` | opens with your project name; the clone-and-adopt instructions are gone |
 | `STATUS.md` | your two answers in the goal ladder, not Ground Work's |
-| `LICENSE`, `TESTING.md`, `context/tasks/` | gone - they describe the template, not your project |
+| `LICENSE`, `TESTING.md`, `docs/plan/` | gone - they describe the template, not your project |
 | `grep -rn "<PROJECT_NAME>\|<ONE SENTENCE>" .` | no hits outside `profiles/` |
 
 Then read [START-HERE.md](START-HERE.md) and do what it says, **as written,
