@@ -160,9 +160,13 @@ true. In the first external evaluation every cited claim was correct and the one
 uncited claim was wrong. A card that overstates its certainty is worse than no
 card, because it gets trusted.
 
-**When a card is worth writing:** when the area will be read **more than twice**.
-Below that, ad-hoc reading is genuinely cheaper. Over-documenting is its own
-waste, and the threshold is the defence against it.
+**When a card is worth writing:** cards grow from tasks. A landmine learned
+during a task goes onto the area's card with its citation - a partial card, if
+there is none yet. A full survey waits until an area is worked in its **third**
+task, and starts with the questions only a human can answer
+([ADR 0004](decisions/0004-task-driven-cards.md)). Below that, ad-hoc reading is
+genuinely cheaper. Over-documenting is its own waste, and the threshold is the
+defence against it.
 
 ---
 
@@ -249,7 +253,8 @@ conversation; handoff and restart.
 Six operational rules:
 
 1. Survey an area in a **dedicated, disposable session**. The only output is the
-   card. Then close the thread. Never survey the same area twice.
+   card. Then close the thread. Do not re-survey an area from scratch: later
+   corrections are edits to the card, each with a citation opened in that session.
 2. **One task per conversation.**
 3. **Write outputs to files, not chat.** Chat output re-enters context on every
    subsequent turn; a file does not.
@@ -303,8 +308,8 @@ cache efficiency, starting context, session growth, and the specific files being
 re-read. Secondary signals:
 
 - **Anything re-explained twice** is a missing line in `AGENTS.md`.
-- **Any card marked `LOW` that keeps being consulted** should be promoted to a
-  proper survey.
+- **A partial card in an area worked three or more times** should be promoted:
+  surveyed, the human asked first, `survey: true` set.
 
 ---
 
@@ -313,8 +318,8 @@ re-read. Secondary signals:
 **Adopting an existing project.** `python scripts/init.py --adopt <dir>` detects
 the stack and real commands, proposes areas from directory contents and git
 churn, and never overwrites anything - its versions of existing files land as
-`.proposed`. Then: run the secret scan, fix the proposed areas, and write the
-card for the busiest one.
+`.proposed`. Then: run the secret scan, fix the proposed areas, and work
+normally - cards grow from the tasks you do, not from a survey up front.
 
 It refuses on a project that is not under version control, and on one with a
 dirty tree. Both refusals protect the same thing: adoption writes dozens of
@@ -362,12 +367,14 @@ is the right size for work nobody will inherit - and the honest trade is that
 every rule below becomes something you hold to rather than something a script
 holds you to.
 
-**Either way, in order:** secret scan → declare areas → card the busiest area →
-recipes for recurring tasks → the handoff habit.
+**Either way, in order:** secret scan → declare areas → work, adding landmines
+to cards as you meet them → full survey of an area at its third task → recipes
+for recurring tasks → the handoff habit.
 
-**Resist surveying areas the work barely touches.** A card is worth writing when
-an area will be read more than twice. Below that threshold, ad-hoc reading is
-cheaper, and a card nobody loads is pure cost.
+**Resist surveying areas the work barely touches.** A full survey is worth it
+when an area has been worked in three tasks. Below that threshold, ad-hoc
+reading plus the landmines already on its card is cheaper, and a card nobody
+loads is pure cost.
 
 ---
 
@@ -434,3 +441,6 @@ appendices duplicated templates that are now real files (§12).
 **0.1A.** Cards are a map, not the truth: §5 makes citations the drift
 management and says the *Do not read* list never applies to bug or performance
 work; §6 lifts grep-before-read for diagnosis, in the same words as `AGENTS.md`.
+
+**ADR 0004.** Cards grow from tasks, with a full survey at an area's third task and a human
+asked first ([ADR 0004](decisions/0004-task-driven-cards.md)).

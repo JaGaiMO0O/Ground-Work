@@ -82,12 +82,15 @@ def main() -> int:
         lib.ok(f"wrote {path}")
 
     if not area.survey:
-        lib.warn(f"{area.name} is not marked 'survey: true' in project.yaml")
-        lib.info("       Set it, so check.py knows this card is expected.")
+        lib.info(
+            f"\n  {area.name} has 'survey: false', so this is a partial card. Fill only\n"
+            "  what you know, with citations, and add landmines as tasks teach them.\n"
+            "  A full survey is for the area's third task."
+        )
 
     lib.info(
-        "\n  Next: read context/recipes/survey-area.md.\n"
-        "  A dedicated session, output only the card, then close the thread."
+        "\n  A full survey follows context/recipes/survey-area.md and starts by\n"
+        "  asking a human."
     )
     return 0
 
