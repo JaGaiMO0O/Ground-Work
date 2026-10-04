@@ -3,7 +3,7 @@
 Purpose: <ONE SENTENCE - what this project is for>
 Done = <ONE SENTENCE - how we know it is finished>
 
-Read the recipe for the task, then the area card. Only then the code.
+Recipes and cards tell you where to look. Open the line a card cites before you state it as fact.
 
 ## Hard rules
 
@@ -31,20 +31,30 @@ Read the recipe for the task, then the area card. Only then the code.
 ## Start here
 
 1. The matching `context/recipes/*.md`.
-2. Then the relevant `map/<area>/CARD.md`.
-3. Only then the code - and **grep before you read**.
+2. Then the relevant `map/<area>/CARD.md` - it says where to look, not what is true.
+3. Then the code it cites - and **grep before you read**.
 
-Never open a file to find out whether it is relevant.
+Never open a file just to find out whether it is relevant. Diagnosing a bug or
+a slowdown is the exception: a card's *Do not read* list and this rule do not
+apply - read what the evidence points at.
 
 ## Cost discipline
 
-- A card costs a fraction of what reading the code costs. Read the card.
+- A card is far cheaper than the code it describes. Use it to find the line, then open that line.
 - MCP tool definitions are re-sent **on every turn**. Enable per task, not per
   project. Check `interfaces/mcp/servers.yaml` for a cheaper script first.
 - Delegate wide reading to a subagent. Take the summary back, not forty files.
-- A card marked `LOW` confidence is a guess. Verify before trusting it.
+- A claim marked `(unverified)`, or a card marked `LOW`, is a guess. Expect it to be wrong.
 - Long conversations get expensive: every turn re-reads everything before it.
   Past ~100k of context, write a handoff and start fresh.
+
+## Cards
+
+- Learned a landmine during a task? Add it to `map/<area>/CARD.md` with the
+  line that proves it. No card yet? Create one with its `Path:` line and that
+  one section.
+- Edit a card only with a citation you opened in this session.
+- Writing a full card? Follow the survey-area skill - it asks a human first.
 
 ## Conventions
 

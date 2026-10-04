@@ -15,14 +15,17 @@ disagrees with it.
    everything after this step is wasted effort. Ownership is also the answer to
    half the questions that get asked as "where does this come from".
 
-2. **`map/<system>/schema.sql` - grep the column, do not read the file.**
+2. **Open the line the Owns claim cites before relying on it.** An
+   `(unverified)` ownership claim is a lead to check, not an answer.
+
+3. **`map/<system>/schema.sql` - grep the column, do not read the file.**
    It is a generated snapshot and it is large. `rg -n '<column>'` is the whole
    interaction.
 
-3. **`integration/mappings/<domain>.md`** - it may already be mapped, in which
+4. **`integration/mappings/<domain>.md`** - it may already be mapped, in which
    case you are checking work rather than doing it.
 
-4. **Only then**, grep the source for the column name.
+5. **Only then**, grep the source for the column name.
 
 ## Do not load
 

@@ -146,18 +146,19 @@ Four sections carry disproportionate weight:
 - **Landmines.** Undocumented behaviour that will bite. This is what makes work
   fail review months later, and it is the section people skip.
 - **Do not read.** A direct cost lever, often the biggest. Dead, generated and
-  vendored code is frequently the majority of the lines.
+  vendored code is frequently the majority of the lines. Each entry says how it
+  is known to be dead. The list never applies to bug or performance work - in
+  the first external evaluation, the second-largest cause of a slowdown sat in a
+  skip list.
 
-**Confidence markers are the drift management.** Rather than maintaining every
-card perfectly, mark what is well-understood and what is guesswork. A `LOW`
-marker tells the next reader to verify before trusting - which is all that is
-needed, at almost no maintenance cost.
-
-**Evidence discipline is what makes a card trustworthy.** "Dead since 2019, zero
-hits in 12 months of logs" is a fact the next person can act on. "Looks unused"
-is a guess, and guesses belong in the `Confidence:` line where they are labelled.
-A card that overstates its certainty is worse than no card, because it gets
-trusted.
+**Citations are the drift management.** Rather than maintaining every card
+perfectly, make every claim checkable: each one cites the line that proves it, or
+is marked `(unverified)`. `check.py` fails a claim with neither, and a local
+citation that no longer points inside its file. The next reader opens the cited
+line rather than trusting the sentence - the card says where to look, not what is
+true. In the first external evaluation every cited claim was correct and the one
+uncited claim was wrong. A card that overstates its certainty is worse than no
+card, because it gets trusted.
 
 **When a card is worth writing:** when the area will be read **more than twice**.
 Below that, ad-hoc reading is genuinely cheaper. Over-documenting is its own
@@ -185,7 +186,9 @@ removes noisy config from every result at the same time.
 
 Two habits matter as much as the configuration:
 
-- **Grep before read.** Never open a file to discover whether it is relevant.
+- **Grep before read.** Never open a file just to find out whether it is
+  relevant. Diagnosing a bug or a slowdown is the exception: a card's *Do not
+  read* list and this rule do not apply - read what the evidence points at.
 - **Read the boundary, not the interior.** Most tasks never need the inside of a
   module.
 
@@ -427,3 +430,7 @@ newcomer cost more than it gave.
 **Corrected.** The original's directory tree omitted three paths it routed to
 elsewhere; its script list disagreed with its own inline comment; and its
 appendices duplicated templates that are now real files (§12).
+
+**0.1A.** Cards are a map, not the truth: §5 makes citations the drift
+management and says the *Do not read* list never applies to bug or performance
+work; §6 lifts grep-before-read for diagnosis, in the same words as `AGENTS.md`.

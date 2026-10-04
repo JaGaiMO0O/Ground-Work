@@ -19,10 +19,11 @@ You cannot write files. Do not try. Return findings as your final message.
   find a hardcoded secret, report the file and line - never the value.
 - **Grep before read.** Never open a file to discover whether it is relevant.
 - If a source is binary (`.fmb`, `.rdf`, `.fmx`, `.mdb`), say so and stop. Do
-  not read it. It needs the derive step first - see
-  `docs/stacks/oracle-forms.md`. A grep returning nothing on a binary is not
-  evidence of absence, and reporting it as such is the specific failure this
-  agent exists to avoid.
+  not read it. It needs the derive step first - see the `derive:` reference
+  block at the foot of `project.yaml`, and in a legacy-modernization project
+  `profiles/legacy-modernization/docs/stacks/oracle-forms.md`. A grep
+  returning nothing on a binary is not evidence of absence, and reporting it as
+  such is the specific failure this agent exists to avoid.
 - **You are a subagent and cannot ask the user anything.** When you hit a
   question only a person can settle, do not guess and do not stop - return it
   under `## Questions only a human can answer`. The main agent asks.

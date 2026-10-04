@@ -1,6 +1,6 @@
 # T08 - AGENTS.md, playbook and trace-field: a card is a map, not the truth
 
-Status: ready
+Status: done
 Wave: 3
 Depends on: T05, T07
 Build: build-0.1A
@@ -137,15 +137,54 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: see `git log -1` on branch `T08-card-is-a-map` (a commit cannot name
+its own hash)
 
 **What changed**
 
+- `AGENTS.md`: step 1 applied verbatim - `:6` line, Start-here list plus the
+  diagnosis exception, the two Cost-discipline bullets, new `## Cards` section
+  before `## Conventions`. `## Commands` untouched. 76 lines, Tier 0 ~852 tokens.
+- `docs/playbook.md`: §5 *Do not read* bullet (how known dead; never for bug or
+  performance work; evaluation evidence); the two paragraphs at `:151-160`
+  merged into one "Citations are the drift management" paragraph, keeping the
+  "worse than no card" sentence and adding the evaluation sentence; §6 *Grep
+  before read* bullet carries the diagnosis exception in AGENTS.md's words; a
+  `**0.1A.**` entry appended at the foot of the Changelog. T11's paragraphs
+  untouched.
+- trace-field skill and recipe: new step 2 after "Owns FIRST" (open the cited
+  line; `(unverified)` ownership is a lead, not an answer); later steps
+  renumbered 3-5.
+- `.claude/agents/surveyor.md`: binary-sources bullet now points to the
+  `derive:` block in `project.yaml` and, for legacy-modernization, to
+  `profiles/legacy-modernization/docs/stacks/oracle-forms.md`; paragraph
+  rewrapped. Nothing else changed.
+
 **Verify output**
+
+- `python scripts/check.py` - exit 0, "Tier 0 ~852 tokens of 1500 budget",
+  "ok all invariants hold".
+- `grep -n "Only then the code" AGENTS.md` - nothing (exit 1).
+- `grep -n "## Cards" AGENTS.md` - `51:## Cards`.
+- `python tests/invariants.py --only "Tier 0"` - 3/3 passed.
+- `python tests/invariants.py` - 49/49 passed (run again after the last edit).
+- `git diff --stat docs/playbook.md` - 20 insertions, 13 deletions.
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- `.claude/agents/surveyor.md:20` - its own *Grep before read* bullet has no
+  diagnosis exception, unlike AGENTS.md and the playbook now. Step 4 said
+  change nothing else in that file.
+- Profile files still point at a project-relative `docs/stacks/oracle-forms.md`:
+  `profiles/legacy-modernization/scaffold/.claude/skills/survey-system/SKILL.md:54`,
+  `profiles/legacy-modernization/scaffold/context/recipes/survey-system.md:28`,
+  `profiles/legacy-modernization/scaffold/context/recipes/no-boundary-contract.md:34`,
+  `profiles/legacy-modernization/examples/orders-forms-legacy/CARD.md:87`.
+  Fine if the profile installs `docs/stacks/` into the project; not checked.
 
 ---
 
