@@ -1,6 +1,6 @@
 # T02 - Make the guardrail hooks find Python on any OS, and test the real wiring
 
-Status: ready
+Status: done
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -121,15 +121,85 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: the single `fix(T02)` commit on branch `claude/goofy-chaum-b122af`
+(a commit cannot hold its own hash, so the hash is in the hand-off message).
 
 **What changed**
 
-**Verify output**
+- `.claude/settings.json`: all four hook commands are now the step-1 line.
+  Nothing else in the file changed.
+- 10 `scripts/*.sh` shims, line 4: `python` first, then `python3`.
+- `README.md` (*Get it*) and `START-HERE.md`: the `python3` sentence, placed
+  where steps 4 and 5 say.
+- `tests/hooks.py`:
+  - `hook_command()` reads the command from `settings.json`.
+  - `fire_hook()` runs it with `bash -c`, `CLAUDE_PROJECT_DIR` set to the repo
+    root and a `json.dumps` payload on stdin.
+  - Two wiring cases check exit codes: `.env` must give 2 and `README.md` must
+    give 0.
+  - `find_bash()` follows the approved deviation below. Each wiring line
+    prints the bash it used.
+  - `nuke(TMP)` runs in a `finally`, using the same version-guarded `rmtree`
+    and retry pattern as `tests/invariants.py`.
+
+**Verify output** (Windows 11, Python 3.12.10)
+
+- `json.load(.claude/settings.json)`: no error.
+- `python tests/hooks.py`: **23/23 passed**, from both Git Bash and
+  PowerShell. Both runs printed `[bash: C:\Program Files\Git\bin\bash.exe]`.
+- `python scripts/check.py`: `ok all invariants hold`, exit 0.
+- `grep -n "command -v" scripts/*.sh`: all 10 shims read
+  `command -v python || command -v python3`.
+- Negative check: `settings.json` was set back to bare `python` for a moment,
+  with no Python on PATH (PATH = `/usr/bin` plus `Git/cmd`). The `.env` case
+  gave **exit 127** and **FAILED** (21/23). The file was then restored and the
+  diff checked.
+- New command, same PATH with no Python: **exit 1**, FAILED. This is the
+  intended visible failure.
+- PATH that has only `python3`: 23/23. The fallback works.
+- PATH with no Git (`C:\WINDOWS\system32` only): both wiring cases FAILED with
+  "no Git Bash found - Claude Code needs Git for Windows (or
+  CLAUDE_CODE_GIT_BASH_PATH) to run hooks". The test did not fall back to WSL.
+- Temp folders: a run leaves no `guard-tests-<pid>` behind. Two older folders
+  are still there and were not made by these runs (see below).
 
 **Deviation requests**
 
+```
+DEVIATION REQUEST T02
+What:        Choose bash for the two wiring cases as Claude Code does on
+             Windows: use CLAUDE_CODE_GIT_BASH_PATH, else Git's
+             bin/bash.exe (found from shutil.which("git")). Elsewhere,
+             plain shutil.which("bash"). If none is found, the case FAILS.
+Why:         From PowerShell/cmd, shutil.which("bash") returns
+             C:\WINDOWS\system32\bash.EXE (the WSL launcher). Its only
+             distro here is docker-desktop, which has no /bin/bash, so the
+             suite gave 21/23. From Git Bash it gave 23/23.
+Impact:      tests/hooks.py only. Asserts and the case count (23) unchanged.
+Alternative: Keep plain shutil.which("bash") and record the difference
+             between shells.
+```
+
+Answer: **APPROVED, with conditions**, all of them met:
+1. Find Git Bash by walking up from the directory of `shutil.which("git")`,
+   at most 3 levels, to the first that contains `bin/bash.exe`.
+2. On Windows, never fall back to System32 `bash.exe`. Fail with a message
+   that Claude Code needs Git for Windows (or `CLAUDE_CODE_GIT_BASH_PATH`).
+   Off Windows, use plain `shutil.which("bash")`.
+3. Print the bash path on each wiring case's output line.
+
 **Found, not fixed**
+
+- Old temp folders `%TEMP%\guard-tests` (2026-08-06, before T00 added the pid
+  suffix) and `%TEMP%\guard-tests-4196` (made earlier today, before this task)
+  are still there. Neither was made by this task's runs, so I left them.
+- `.claude/settings.json:22-33`: the allow-list entries still use
+  `Bash(python scripts/...)`. On a machine with only `python3` they will not
+  match. The task defers this.
+- Windows: if `python` is missing but the Microsoft Store `python3.exe` stub
+  is on PATH (this machine has it in `WindowsApps`), the hook will `exec` the
+  stub. The stub exits non-zero with its own message, so the hook does not
+  block, though the message is visible. This was not tested here.
 
 ---
 

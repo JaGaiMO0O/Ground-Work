@@ -25,6 +25,8 @@ Three things follow from that:
 ## The four commands
 
 You do not need to understand the whole repo. You need these.
+On macOS and Linux the command is often `python3` - use that wherever these
+docs say `python`.
 
 **See where your budget actually went.** Run this first. It reads your real
 session history and tells you what you have been paying for.

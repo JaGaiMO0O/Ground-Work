@@ -18,9 +18,12 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -43,6 +46,79 @@ def fire(payload: dict) -> str:
     if proc.stdout.strip():
         return WARN
     return SILENT
+
+
+def hook_command(event: str) -> str:
+    """The command Claude Code actually runs - read from settings, never copied."""
+    settings = json.loads((REPO / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    return settings["hooks"][event][0]["hooks"][0]["command"]
+
+
+def find_bash():
+    """-> (path, None) or (None, why not). The shell Claude Code itself uses.
+
+    On Windows that is Git Bash. Plain `bash` there often resolves to
+    System32\\bash.exe, the WSL launcher - never fall back to it.
+    """
+    override = os.environ.get("CLAUDE_CODE_GIT_BASH_PATH")
+    if override:
+        return override, None
+    if os.name != "nt":
+        bash = shutil.which("bash")
+        if bash:
+            return bash, None
+        return None, "bash not on PATH - Claude Code runs hooks through a POSIX shell"
+    git = shutil.which("git")
+    if git:
+        # git.exe sits in Git\cmd, Git\bin or Git\mingw64\bin, by version.
+        here = Path(git).resolve().parent
+        for d in [here, *here.parents][:4]:
+            if (d / "bin" / "bash.exe").is_file():
+                return str(d / "bin" / "bash.exe"), None
+    return None, ("no Git Bash found - Claude Code needs Git for Windows "
+                  "(or CLAUDE_CODE_GIT_BASH_PATH) to run hooks")
+
+
+def fire_hook(event: str, payload: dict):
+    """-> (exit code, bash, None) or (None, None, why it could not run).
+
+    Runs the real wiring, not just guard.py: a hook that cannot find Python
+    fails open, and the guard tests above would never notice.
+    """
+    bash, why = find_bash()
+    if not bash:
+        return None, None, why
+    proc = subprocess.run(
+        [bash, "-c", hook_command(event)],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        cwd=str(REPO),
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(REPO)},
+    )
+    return proc.returncode, bash, None
+
+
+def nuke(path: Path):
+    """Same pattern as tests/invariants.py: TMP is per process, so remove it."""
+
+    def force(func, target, _exc):
+        try:
+            os.chmod(target, stat.S_IWRITE)
+            func(target)
+        except OSError:
+            pass
+
+    for _ in range(4):
+        if not path.exists():
+            return
+        try:
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(path, onexc=force)
+            else:
+                shutil.rmtree(path, onerror=force)
+        except OSError:
+            time.sleep(0.3)
 
 
 def pre(tool: str, path: Path, **extra) -> dict:
@@ -129,6 +205,13 @@ def main() -> int:
         SILENT,
     ))
 
+    # The real hook command from settings.json, judged by exit code: 2 blocks,
+    # 0 allows. Anything else means the wiring broke, whichever way it fails.
+    wiring = [
+        ("hook wiring: read .env",       pre("Read", REPO / ".env"), 2),
+        ("hook wiring: read README.md",  pre("Read", REPO / "README.md"), 0),
+    ]
+
     failures = 0
     print(f"{'case':34} {'got':>7} {'want':>7}  result")
     print("-" * 66)
@@ -137,13 +220,27 @@ def main() -> int:
         good = got == want
         failures += 0 if good else 1
         print(f"{name:34} {got:>7} {want:>7}  {'ok' if good else 'FAILED'}")
+    for name, payload, want in wiring:
+        code, bash, why = fire_hook("PreToolUse", payload)
+        good = code == want
+        failures += 0 if good else 1
+        got = "n/a" if code is None else f"exit {code}"
+        print(f"{name:34} {got:>7} {'exit ' + str(want):>7}  {'ok' if good else 'FAILED'}"
+              f"  [bash: {bash or 'none'}]")
+        if why:
+            print(f"  {why}")
 
+    total = len(cases) + len(wiring)
     print("-" * 66)
-    print(f"{len(cases) - failures}/{len(cases)} passed")
+    print(f"{total - failures}/{total} passed")
     if not long_session:
         print("note: no local transcripts, so the context-nudge cases were skipped")
     return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        code = main()
+    finally:
+        nuke(TMP)
+    sys.exit(code)

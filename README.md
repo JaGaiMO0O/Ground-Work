@@ -14,7 +14,8 @@ a way somebody else can pick up.
 ## Get it
 
 You need **Python 3.8+** and **git**. That is the whole requirement - no install
-step, no dependencies, no virtualenv.
+step, no dependencies, no virtualenv. On macOS and Linux the command is often
+`python3` - use that wherever these docs say `python`.
 
 **Starting something new?** Take a copy and make it yours:
 
