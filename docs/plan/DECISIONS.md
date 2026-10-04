@@ -84,3 +84,9 @@ outside the company network. After every merge, `main` is pushed to **both**.
 `origin` had a `pushurl` pointing at GitHub, which is why pushes never reached
 GitLab and worktrees started stale; it was removed. `old-origin` duplicates
 `github` and is left alone.
+
+**D-15 - Fake secrets in fixtures are baselined, not excluded** *(2026-10-04)*
+A test or brief that needs a secret-shaped string gets its exact fingerprint
+accepted with `scan.py --update`, after checking the new findings are only those
+fixtures. Folders are never excluded from the scan to make it pass: an excluded
+folder would also hide a real secret someone later puts there.

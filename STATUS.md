@@ -64,13 +64,13 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-10-04 13:33 UTC
-Branch:       main @ e47827f (2026-10-04), 24 uncommitted change(s)
-              "docs(lead): fix dangling stacks pointers"
+Generated:    2026-10-04 14:03 UTC
+Branch:       main @ 71dddaf (2026-10-04), 10 uncommitted change(s)
+              "chore(T16): merge task/T16-plan-stays-home-npm-install"
 Validation:   clean
 Last handoff: 2026-09-03-build-0a-tester-handover.md
               Next: 1. Authorize the Atlassian MCP (installed, not yet authorized - OAuth...
 Areas:        4 declared, 0 with a card
-Budget:       cache 97%; peak context 761k; orientation 11%   -> python scripts/usage.py
+Budget:       cache 97%; peak context 807k; orientation 10%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->

@@ -17,6 +17,10 @@ You need **Python 3.8+** and **git**. That is the whole requirement - no install
 step, no dependencies, no virtualenv. On macOS and Linux the command is often
 `python3` - use that wherever these docs say `python`.
 
+The clone commands below use the company GitLab. From outside the company
+network, use the GitHub mirror instead - same repository:
+`https://github.com/JaGaiMO0O/Ground-Work.git`.
+
 **Starting something new?** Take a copy and make it yours:
 
 ```bash

@@ -126,20 +126,20 @@ list, in a lead commit on `main`. Nothing gets dropped.
 
 ---
 
-## Lanes - waves 4 to 6
+## Lanes - waves 4 to 7
 
 Each file belongs to one lane. Tasks in the same wave sit in different lanes.
 
-| Lane | Files | W4 | W5 | W6 |
-|---|---|---|---|---|
-| Workflow | `docs/decisions/0004-*` (new), `scripts/init.py` *(adopt "Next" message block)*, `scripts/new_card.py` *(messages)*, `docs/playbook.md`, `.claude/skills/onboard/SKILL.md` | T11 | | |
-| Scan | `scripts/scan.py`, `tests/scan.py` (new), `project.yaml`, `RUNBOOK.md`, `.sh` file modes | T12 | | T14 *(RUNBOOK)* |
-| Adoption | `scripts/_adopt.py`, `scripts/init.py` *(`TEMPLATE_ONLY_DIRS` block)*, `tests/adopt.py`, `README.md`, `TESTING.md` | T16 | | T14 *(TESTING)* |
-| QA | none - scratch copies outside the repo | | T13 | |
-| Release | `TESTING.md`, `RUNBOOK.md`, `STATUS.md`, `context/handoffs/` | | | T14 |
+| Lane | Files | W4 | W5 | W6 | W7 |
+|---|---|---|---|---|---|
+| Workflow | `docs/decisions/0004-*`, `scripts/init.py` *(message strings)*, `scripts/new_card.py` *(messages)*, `docs/playbook.md`, `.claude/skills/onboard/SKILL.md`, `.claude/README.md`, `scripts/usage.py` *(advice string)*, `scripts/_adopt.py` *(project.yaml header)* | T11 | T18 | | |
+| Scan | `scripts/scan.py`, `tests/scan.py`, `project.yaml`, `RUNBOOK.md`, `.sh` file modes | T12 | T17 | | T14 *(RUNBOOK)* |
+| Adoption | `scripts/_adopt.py` *(logic)*, `scripts/init.py` *(`TEMPLATE_ONLY_DIRS` block)*, `tests/adopt.py`, `README.md`, `TESTING.md` | T16 | | | T14 *(TESTING)* |
+| QA | none - scratch copies outside the repo | | | T13 | |
+| Release | `TESTING.md`, `RUNBOOK.md`, `STATUS.md`, `context/handoffs/` | | | | T14 |
 
-`scripts/init.py` is split by block in wave 4: T11 owns the adopt "Next" message
-string, T16 owns `TEMPLATE_ONLY_DIRS` and the code that applies it.
+`scripts/init.py` and `scripts/_adopt.py` are split by block: message strings and
+the generated `project.yaml` header belong to Workflow; logic belongs to Adoption.
 
 ---
 

@@ -26,7 +26,9 @@ graph LR
   T08 --> T11
   T09 --> T12
   T10 --> T16
-  T11 & T12 & T15 & T16 --> T13
+  T12 --> T17
+  T11 & T16 --> T18
+  T11 & T12 & T15 & T16 & T17 & T18 --> T13
   T13 --> T14
 ```
 
@@ -50,11 +52,13 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T09 | Docs drift; derived build label | 3 | - | Merged | `684ac0b` |
 | T10 | Detect missed test commands | 3 | - | Merged | `183474c` |
 | T15 | Skip-list check asks git | 3 | - | Merged | `2cf05ce` |
-| T11 | ADR 0004: cards grow from tasks | 4 | Workflow | Not started | |
-| T12 | scan.py false positive; scan suite | 4 | Scan | Not started | |
-| T16 | docs/plan stays home; null scripts keep install | 4 | Adoption | Not started | |
-| T13 | QA end to end | 5 | QA | Not started | |
-| T14 | Release prep | 6 | Release | Not started | |
+| T11 | ADR 0004: cards grow from tasks | 4 | Workflow | Merged | `f4e29bd` |
+| T12 | scan.py false positive; scan suite | 4 | Scan | Merged | `b3710ef` |
+| T16 | docs/plan stays home; null scripts keep install | 4 | Adoption | Merged | `71dddaf` |
+| T17 | **Security:** scan repos under build/vendor dirs | 5 | Scan | Not started | |
+| T18 | Last survey-first messages | 5 | Workflow | Not started | |
+| T13 | QA end to end | 6 | QA | Not started | |
+| T14 | Release prep | 7 | Release | Not started | |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
 was adopted. Waves 0-3 ran on per-task file lists.
@@ -73,9 +77,8 @@ After T13 reports. **Go** only if all of these hold:
 
 ## Cut line
 
-**Must ship:** T11, T13, T14, T16.
-**May be cut to hold a date:** T12 - it removes false positives, it does not catch
-a missed secret.
+**Must ship:** T13, T14, and **T17 (security)**. Merged: T11, T12, T16.
+**May be cut to hold a date:** T18 - wording only; the tools still work.
 Security fixes are never cut to hold a date.
 
 ---
@@ -116,7 +119,8 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | `project_dirs_for` fallback globs unsorted | T03 |
 | The harness's Python < 3.12 branch is unexercised - no older Python here | T00 |
 | Gap tests (D-11) | standard |
-| README gives only the GitLab clone URL; GitHub is the route in from outside the company network - lead doc fix once T16 (which owns README this wave) merges | D-14 |
+| One quoted secret yields two scan findings (`password-assignment` and `password-property`), so two baseline fingerprints | T12 |
+| No test covers `new_card.py`'s message for a `survey: false` area | T11 |
 
 ---
 
@@ -126,6 +130,16 @@ Newest first. Lead only.
 
 **2026-10-04**
 
+- **Wave 4 merged** `--no-ff` after the user's review: T11 `f4e29bd`, T12 `b3710ef`,
+  T16 `71dddaf`. Integrated run first: check 0, invariants 51/51, hooks 26/26,
+  adopt 32/32, scan 6/6. One escalation (T12, assert positives by inclusion) -
+  answered option 1. **T17 added - security:** T12's worker reproduced `scan.py`
+  reporting a whole repo clean when it sits under a `build/` or `vendor/` folder.
+  **T18 added** for four survey-first messages T11 found outside its lane. Waves
+  shift: T13 -> 6, T14 -> 7.
+- **Lead fixes:** `scan.py --update` accepted exactly the two fake `hunter2xyz`
+  fixtures the T12 brief introduced (D-15); README names the GitHub mirror for
+  cloning from outside the company network (D-14 follow-up).
 - **Remotes reconciled (D-14).** Removed `origin`'s `pushurl` override, so
   `origin` is GitLab both ways. Pushed `main` (`97e016c`) to GitLab and GitHub;
   both match `main`, and `origin/main` is current, so new worktrees start current.

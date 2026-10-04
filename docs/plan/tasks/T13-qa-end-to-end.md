@@ -1,7 +1,7 @@
 # T13 - QA: verify build 0.1A end to end, and report
 
-Wave: 5
-Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T15, T16
+Wave: 6
+Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T15, T16, T17, T18
 Lane: QA
 Estimate: L (~2 h)
 Build: build-0.1A
@@ -34,7 +34,8 @@ Record every step's command and result in Handoff, as a table:
 
 1. **Regression.** In this repo: `python scripts/check.py`, then
    `tests/invariants.py` (expect 51), `tests/hooks.py` (26), `tests/adopt.py`
-   (32), `tests/scan.py` (6).
+   (32), `tests/scan.py` (8), and
+   `python scripts/scan.py` itself (expect exit 0).
 2. **Transcript discovery.** Run the real-data check from T03's *Verify*.
    Expect every folder to match.
 3. **Older Python.** `py -0`. If any Python below 3.12 is installed, run all four
