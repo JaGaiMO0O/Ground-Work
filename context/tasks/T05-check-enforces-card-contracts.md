@@ -1,6 +1,6 @@
 # T05 - check.py enforces the card contracts; budget 2,500
 
-Status: done
+Status: accepted
 Wave: 2
 Depends on: T04
 Build: build-0.1A
@@ -212,3 +212,12 @@ None.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Cherry-picked into `main` as `f214843`. Branch `T05-check-enforces-card-contracts`, built on `main`
+(`d0c3f9f`) after the worker's own fast-forward.
+
+- Gate: invariants 49/49, check exit 0.
+- *Found, not fixed* items 1 (reference search walks into worktrees, false
+  warnings) and 3 (`per` date not validated) -> new **T15**, wave 3. Item 2
+  (legacy scaffold template checked only once applied) is by design - the
+  legacy invariant cases cover it.

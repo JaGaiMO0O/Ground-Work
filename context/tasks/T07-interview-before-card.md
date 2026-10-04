@@ -1,6 +1,6 @@
 # T07 - Survey skills interview a human before writing a card
 
-Status: done
+Status: accepted
 Wave: 2
 Depends on: T04
 Build: build-0.1A
@@ -215,3 +215,11 @@ and `main` itself was not touched. T04 shows `Status: accepted` there.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Cherry-picked into `main` as `befa2f5`. Branch `T07-interview-before-card`, built on `main`
+(`d0c3f9f`) after the worker's own fast-forward.
+
+- Live in the lead session the moment it merged: the survey-area skill's
+  listing now carries the three-task trigger.
+- *Found, not fixed*: `docs/playbook.md:249` -> T11; the dangling
+  `docs/stacks/oracle-forms.md` pointer in `surveyor.md` -> T08 step 4.

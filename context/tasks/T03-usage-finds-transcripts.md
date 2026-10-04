@@ -1,6 +1,6 @@
 # T03 - Make usage.py find a project's transcripts from any path
 
-Status: done
+Status: accepted
 Wave: 2
 Depends on: T00, T02
 Build: build-0.1A
@@ -200,3 +200,11 @@ outside the list was touched.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Fast-forwarded into `main` as `92337a7`. Branch `T03-usage-finds-transcripts`, built on `main`
+(`d0c3f9f`) after the worker's own fast-forward.
+
+- Gate: hooks 26/26.
+- *Found, not fixed*: the stale worktree base is now protocol step 1. The
+  slug column width and the unsorted fallback glob are deferred - cosmetic,
+  and negligible in practice.

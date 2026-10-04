@@ -2,7 +2,7 @@
 
 Status: ready
 Wave: 5
-Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12
+Depends on: T00, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T15
 Build: build-0.1A
 
 ## Goal
@@ -32,7 +32,7 @@ Record every step's command and result in Report, as a table:
 **check · result · evidence**.
 
 1. **Regression.** In this repo: `python scripts/check.py`, then
-   `tests/invariants.py` (expect 49), `tests/hooks.py` (26), `tests/adopt.py`
+   `tests/invariants.py` (expect 51), `tests/hooks.py` (26), `tests/adopt.py`
    (31), `tests/scan.py` (6).
 2. **Transcript discovery.** Run the real-data check from T03's *Verify*.
    Expect every folder to match.

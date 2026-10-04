@@ -69,6 +69,12 @@ any fixture contains is a one-line `requirements.txt`.
    | detect maven wrapper | `pom.xml`, `mvnw` | `  test: ./mvnw test` |
    | package.json array no crash | `package.json` = `[]` | adopt exits 0; `project.yaml` written |
 
+8. In `tests/adopt.py`, pass `stdin=subprocess.DEVNULL` to **every**
+   `subprocess.run` that runs `init.py` - the harness's own call in `main()`,
+   `run_template_init()`, and any other. `adopt()` prompts when stdin is a
+   terminal and purpose or done is missing, so run from a user's own terminal
+   the suite can hang on a prompt nobody can see. Found by T06's worker.
+
 ## Do not
 
 - Change language detection's last-match-wins behaviour, or the `.csproj` glob -

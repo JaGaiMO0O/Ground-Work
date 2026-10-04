@@ -30,6 +30,7 @@ T05 now enforces citations, so the router can point at them.
 
 - `AGENTS.md`
 - `docs/playbook.md` - only the paragraphs named in step 2
+- `.claude/agents/surveyor.md` - the binary-sources pointer only, step 4
 - `.claude/skills/trace-field/SKILL.md`
 - `context/recipes/trace-field.md`
 - `context/tasks/T08-card-is-a-map.md` - Report section and Status line only
@@ -82,6 +83,13 @@ T05 now enforces citations, so the router can point at them.
 3. **trace-field skill and recipe**: after the step that reads the card's
    **Owns** first, add: open the line the Owns claim cites before relying on it;
    an `(unverified)` ownership claim is a lead to check, not an answer.
+
+4. **`.claude/agents/surveyor.md`**, binary-sources rule: it points to
+   `docs/stacks/oracle-forms.md`, which does not exist in a general-profile
+   project (found by T07's worker). Point instead to the `derive:` reference
+   block at the foot of `project.yaml`, and - in a legacy-modernization project -
+   to `profiles/legacy-modernization/docs/stacks/oracle-forms.md`. Change nothing
+   else in that file.
 
 ## Do not
 

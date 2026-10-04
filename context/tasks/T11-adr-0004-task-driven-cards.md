@@ -78,6 +78,10 @@ workflow the review just measured, and measure the wrong thing.
      adding landmines to cards as you meet them -> full survey of an area at its
      third task -> recipes for recurring tasks -> the handoff habit. Align the
      "Resist surveying" sentence after it with the three-task threshold.
+   - `docs/playbook.md:249` "Never survey the same area twice" (found by T07's
+     worker): match the survey-area skill - do not re-survey an area from
+     scratch; later corrections are edits, each with a citation opened in that
+     session.
    - One changelog line at the foot for ADR 0004.
 4. **`scripts/new_card.py`**: when the area has `survey: false`, do **not** warn.
    Print instead that this is a partial card - fill only what you know, with

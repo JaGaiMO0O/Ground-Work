@@ -1,6 +1,6 @@
 # T06 - Stop second-generation adoption leaking purpose; stamp the build label
 
-Status: done
+Status: accepted
 Wave: 2
 Depends on: T01
 Build: build-0.1A
@@ -210,3 +210,11 @@ history was rewritten, and there were no commits of mine at that point.
 ## Lead review
 
 <!-- Lead only. -->
+
+**Accepted 2026-10-04.** Cherry-picked into `main` as `c86f435`. Branch `T06-second-gen-adopt-and-version`, built on `main`
+(`d0c3f9f`) after the worker's own fast-forward.
+
+- Gate: adopt 26/26. Synced its own stale worktree base before starting,
+  and said so - now protocol step 1.
+- *Found, not fixed*: stdin not detached in `tests/adopt.py` -> T10 step 8.
+  The `git describe` label reads `build-0A-N-g...` until T14's tag - expected.

@@ -17,14 +17,18 @@ You were started with something like *"Execute context/tasks/T04-....md"*.
 
 ### Before you touch anything
 
-1. Read, in this order: `AGENTS.md`, this file, your task file. Then only the
+1. **Bring your branch up to `main`:** `git merge --ff-only main`. The app
+   starts worktrees from the last *pushed* commit, which can be many commits
+   behind - without this you may not even have this file. If it is not a
+   fast-forward, stop and tell the user. (Found by three wave-2 workers.)
+2. Read, in this order: `AGENTS.md`, this file, your task file. Then only the
    files your task names. Do not survey the repo.
-2. Check every task in your `Depends on:` line. Its `Status:` must be
+3. Check every task in your `Depends on:` line. Its `Status:` must be
    `accepted`. If any is not, stop and tell the user which.
-3. Rename your branch to your task file's name without `.md`, for example
+4. Rename your branch to your task file's name without `.md`, for example
    `git branch -m T05-check-enforces-card-contracts`. The app names it
    `work/<random>`; the task ID is what the lead and the user look for.
-4. Set your task's `Status:` to `in progress`.
+5. Set your task's `Status:` to `in progress`.
 
 ### Scope is fixed
 
@@ -192,15 +196,16 @@ from outside the repo, whether "unused" code is dead *in production*.
 No two tasks in the same wave change the same file, so their branches merge into
 `main` without conflict. Each runs in its own worktree. A wave's chips are posted
 only when the previous wave is merged, `accepted`, and the lead's regression run
-on `main` is green - so every worktree starts from a `main` that already holds its
-dependencies.
+on `main` is green. The app starts a worktree from the last *pushed* commit, not
+from local `main`, so every worker fast-forwards to `main` first (step 1) - that
+is what puts its dependencies under it.
 
 | Wave | Tasks |
 |---|---|
 | 0 | T00 |
 | 1 | T01, T02, T04 |
 | 2 | T03, T05, T06, T07 |
-| 3 | T08, T09, T10 |
+| 3 | T08, T09, T10, T15 |
 | 4 | T11, T12 |
 | 5 | T13 |
 | 6 | T14 |
