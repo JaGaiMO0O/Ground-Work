@@ -116,6 +116,7 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | `project_dirs_for` fallback globs unsorted | T03 |
 | The harness's Python < 3.12 branch is unexercised - no older Python here | T00 |
 | Gap tests (D-11) | standard |
+| `origin` fetches from GitLab but pushes to GitHub; GitLab (the README's clone URL) lags `main` - user decision on which remote is canonical | push, 2026-10-04 |
 
 ---
 
@@ -125,6 +126,12 @@ Newest first. Lead only.
 
 **2026-10-04**
 
+- **Pushed `main` (`91efe57`) - to GitHub only.** `origin` is split: it fetches
+  from the internal GitLab (`gitlab.optimizasolutions.com/myaghmour/ground-works`)
+  and pushes to GitHub (`JaGaiMO0O/Ground-Work`). GitLab - the clone URL the README
+  gives testers, and the side `origin/main` tracks - is still at `1a79a04`. That is
+  the real reason worktrees start stale; D-13's premise does not hold until the
+  remotes are reconciled. User decision pending.
 - **Migrated to `docs/plan/`** (D-09): briefs moved from `context/tasks/`, their
   `Status:` lines removed (this table is canonical), open briefs gained Lane,
   Estimate and a Handoff with Rollback. PROTOCOL rewritten to the user's
