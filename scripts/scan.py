@@ -88,6 +88,12 @@ def looks_like_placeholder(value: str) -> bool:
     return len(set(value)) <= 2
 
 
+def looks_like_expression(value: str) -> bool:
+    """A call or subscript is code, not a literal secret. password-property only:
+    a quoted password-assignment value may legitimately contain brackets."""
+    return "(" in value or "[" in value
+
+
 def fingerprint(rule: str, path: str, secret: str) -> str:
     digest = hashlib.sha256(f"{rule}|{path}|{secret}".encode("utf-8"))
     return digest.hexdigest()[:16]
@@ -127,6 +133,8 @@ def regex_scan(root: Path) -> "list[dict]":
             for match in pattern.finditer(text):
                 secret = match.group(1) if match.groups() else match.group(0)
                 if looks_like_placeholder(secret):
+                    continue
+                if rule == "password-property" and looks_like_expression(secret):
                     continue
                 line = text.count("\n", 0, match.start()) + 1
                 findings.append({
