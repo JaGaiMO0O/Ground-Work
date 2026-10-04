@@ -103,13 +103,6 @@ def travels(rel: Path) -> bool:
     return True
 
 
-CODE_SUFFIXES = {
-    ".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".java",
-    ".kt", ".go", ".rs", ".rb", ".php", ".cs", ".c", ".h", ".cpp", ".hpp",
-    ".swift", ".scala", ".ex", ".sql", ".sh", ".ps1", ".m", ".dart",
-}
-
-
 @dataclass
 class Detected:
     stack: dict = field(default_factory=dict)
@@ -129,6 +122,37 @@ def _read(path: Path) -> str:
         return ""
 
 
+def _has_python_tests(target: Path) -> bool:
+    """A tests/ or test/ directory, a pytest.ini or a conftest.py - at the root
+    or one level down. Projects keep their tests under backend/ as often as at
+    the top, and the root-only look gave an 84-test project a TODO."""
+    places = [target] + [
+        entry for entry in sorted(target.iterdir())
+        if entry.is_dir() and entry.name not in NOISE
+    ]
+    for place in places:
+        if (place / "tests").is_dir() or (place / "test").is_dir():
+            return True
+        if (place / "pytest.ini").is_file() or (place / "conftest.py").is_file():
+            return True
+    return False
+
+
+_REQUIREMENT_INCLUDE = re.compile(r"^\s*(?:-r\s+|--requirement(?:=|\s+))(\S+)")
+_PYTEST_LINE = re.compile(r"^\s*pytest\b", re.I)
+
+
+def _requirements_mention_pytest(path: Path) -> bool:
+    """Does this requirements file, or one it includes with -r, list pytest?
+    Includes are followed one level, relative to the including file."""
+    lines = _read(path).splitlines()
+    for line in list(lines):
+        match = _REQUIREMENT_INCLUDE.match(line)
+        if match:
+            lines += _read(path.parent / match.group(1)).splitlines()
+    return any(_PYTEST_LINE.match(line) for line in lines)
+
+
 def detect(target: Path) -> Detected:
     found = Detected()
 
@@ -138,7 +162,12 @@ def detect(target: Path) -> Detected:
         found.sources.append("package.json")
         try:
             data = json.loads(_read(pkg) or "{}")
-            scripts = data.get("scripts") or {}
+        except json.JSONDecodeError:
+            data = None
+        # Valid JSON is not necessarily an object. A top-level array, or a
+        # `scripts` that is not a mapping, gives us no commands - not a crash.
+        scripts = data.get("scripts", {}) if isinstance(data, dict) else None
+        if isinstance(scripts, dict):
             runner = "npm run "
             if (target / "pnpm-lock.yaml").is_file():
                 runner = "pnpm "
@@ -158,8 +187,6 @@ def detect(target: Path) -> Detected:
                     )
             if (target / "tsconfig.json").is_file():
                 found.stack["typed"] = "typescript"
-        except json.JSONDecodeError:
-            pass
 
     pyproject = target / "pyproject.toml"
     if pyproject.is_file():
@@ -167,7 +194,7 @@ def detect(target: Path) -> Detected:
         found.sources.append("pyproject.toml")
         text = _read(pyproject)
         found.commands.setdefault("install", "pip install -e .")
-        if "pytest" in text:
+        if "pytest" in text or _has_python_tests(target):
             found.commands.setdefault("test", "pytest")
         if "ruff" in text:
             found.commands.setdefault("lint", "ruff check .")
@@ -178,8 +205,10 @@ def detect(target: Path) -> Detected:
     elif (target / "requirements.txt").is_file():
         found.stack["language"] = "python"
         found.sources.append("requirements.txt")
+        # pip follows -r itself, so the install command stays as it is.
         found.commands.setdefault("install", "pip install -r requirements.txt")
-        if (target / "pytest.ini").is_file() or (target / "tests").is_dir():
+        if (_requirements_mention_pytest(target / "requirements.txt")
+                or _has_python_tests(target)):
             found.commands.setdefault("test", "pytest")
 
     makefile = next((p for p in (target / "Makefile", target / "makefile")
@@ -191,18 +220,23 @@ def detect(target: Path) -> Detected:
             if name in targets:
                 found.commands.setdefault(name, f"make {name}")
 
+    # A wrapper pins the build tool's version, and a Java estate often has no
+    # global mvn or gradle at all - so when one is checked in, it is the command.
+    gradle_files = sorted(target.glob("build.gradle*"))
     if (target / "pom.xml").is_file():
         found.stack["language"] = "java"
         found.stack["build"] = "maven"
         found.sources.append("pom.xml")
-        found.commands.setdefault("test", "mvn test")
-        found.commands.setdefault("build", "mvn -DskipTests package")
-    elif list(target.glob("build.gradle*")):
+        mvn = "./mvnw" if (target / "mvnw").is_file() else "mvn"
+        found.commands.setdefault("test", f"{mvn} test")
+        found.commands.setdefault("build", f"{mvn} -DskipTests package")
+    elif gradle_files:
         found.stack["language"] = "java/kotlin"
         found.stack["build"] = "gradle"
-        found.sources.append("build.gradle")
-        found.commands.setdefault("test", "gradle test")
-        found.commands.setdefault("build", "gradle build")
+        found.sources.append(gradle_files[0].name)
+        gradle = "./gradlew" if (target / "gradlew").is_file() else "gradle"
+        found.commands.setdefault("test", f"{gradle} test")
+        found.commands.setdefault("build", f"{gradle} build")
 
     if (target / "Cargo.toml").is_file():
         found.stack["language"] = "rust"
@@ -261,7 +295,7 @@ def propose_areas(target: Path, limit: int = 6) -> "list[tuple[str, str, int]]":
         files = [
             p for p in entry.rglob("*")
             if p.is_file()
-            and p.suffix.lower() in CODE_SUFFIXES
+            and p.suffix.lower() in lib.CODE_SUFFIXES
             and not any(part in NOISE for part in p.parts)
         ]
         if not files:
