@@ -72,6 +72,15 @@ evidence is `usage.py --path <project>` before and after two weeks of ordinary
 work (T14, Track D) - `--path`, never `--all`, which lists every project on the
 tester's machine.
 
-**D-13 - Pushing** *(2026-10-04)*
+**D-13 - Pushing** *(2026-10-04; superseded by D-14)*
 `main` is pushed to `origin` after every merge, so the remote matches and new
 worktrees start current.
+
+**D-14 - Remotes** *(2026-10-04, user decision)*
+`origin` is the internal GitLab (`gitlab.optimizasolutions.com/myaghmour/ground-works`),
+for both fetch and push - the canonical remote, and what the app starts worktrees
+from. `github` (`JaGaiMO0O/Ground-Work`) is the backup and the route in from
+outside the company network. After every merge, `main` is pushed to **both**.
+`origin` had a `pushurl` pointing at GitHub, which is why pushes never reached
+GitLab and worktrees started stale; it was removed. `old-origin` duplicates
+`github` and is left alone.

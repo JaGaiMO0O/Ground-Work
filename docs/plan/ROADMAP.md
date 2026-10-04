@@ -116,7 +116,7 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | `project_dirs_for` fallback globs unsorted | T03 |
 | The harness's Python < 3.12 branch is unexercised - no older Python here | T00 |
 | Gap tests (D-11) | standard |
-| `origin` fetches from GitLab but pushes to GitHub; GitLab (the README's clone URL) lags `main` - user decision on which remote is canonical | push, 2026-10-04 |
+| README gives only the GitLab clone URL; GitHub is the route in from outside the company network - lead doc fix once T16 (which owns README this wave) merges | D-14 |
 
 ---
 
@@ -126,6 +126,9 @@ Newest first. Lead only.
 
 **2026-10-04**
 
+- **Remotes reconciled (D-14).** Removed `origin`'s `pushurl` override, so
+  `origin` is GitLab both ways. Pushed `main` (`97e016c`) to GitLab and GitHub;
+  both match `main`, and `origin/main` is current, so new worktrees start current.
 - **Pushed `main` (`91efe57`) - to GitHub only.** `origin` is split: it fetches
   from the internal GitLab (`gitlab.optimizasolutions.com/myaghmour/ground-works`)
   and pushes to GitHub (`JaGaiMO0O/Ground-Work`). GitLab - the clone URL the README
