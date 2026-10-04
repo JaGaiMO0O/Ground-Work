@@ -1,6 +1,6 @@
 # T04 - Card templates and examples: citations, skip reasons, open questions
 
-Status: ready
+Status: done
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -139,15 +139,46 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: this commit on `claude/trusting-cohen-a80a36` (hash reported in chat)
 
 **What changed**
 
+- Both templates: C1 citation paragraph in the top comment; Confidence guidance
+  says per-claim doubt is marked `(unverified)`; Owns and Landmines placeholders
+  and the In-table *Entry point* placeholder show `` `<path>:<line>` ``; Do not
+  read guidance states C2 and the bug/slowdown exception (WHY sentence kept);
+  optional `## Open questions` section added (C4); budget 2,000 -> 2,500.
+- Legacy template: how to cite `kind: repo` paths, Forms/binaries (`derived/`)
+  and database logic (`schema:OBJECT`). `## Seams` untouched.
+- billing-legacy: every Owns/Interfaces/Landmines claim cited (`path:N`,
+  `path:N-M`, `schema:`, `per`); two Do not read reasons now say how it is known.
+- orders-forms-legacy: every claim cited, Forms claims cite
+  `map/orders-forms-legacy/derived/*.xml`; `(unverified)` on the night-ops row,
+  tied to a new `## Open questions` entry; one Do not read reason strengthened.
+- Growth: billing ~+16%, orders ~+17%.
+- Required headings and header fields unchanged.
+
 **Verify output**
+
+- `python scripts/check.py` -> `ok   all invariants hold`, exit 0.
+- Self-check over both templates and both examples -> `uncited claims: 0`.
+- Extra: `check.card_gaps` on the legacy template with `['Seams']` -> no gaps.
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- The Verify self-check only inspects the first line of a multi-line bullet, so
+  citations were placed on each bullet's first line. T05 should decide whether
+  continuation lines count as part of the claim.
+- C2 "reason" strips *the* backticked path; two entries carry a second
+  backticked path (`billing-legacy/CARD.md` fixtures entry,
+  `orders-forms-legacy/CARD.md` binaries entry). T05 should strip all leading
+  paths, or only the first, deliberately.
+- Both templates still have bare `-` under `### Out` and `## Do not read`; the
+  steps did not cover them, so no placeholder shows an Out citation or a C2 entry.
 
 ---
 
