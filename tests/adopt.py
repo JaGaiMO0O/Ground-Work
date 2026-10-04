@@ -115,6 +115,7 @@ def run_template_init(template: Path, target: Path, *argv):
     return subprocess.run(
         [sys.executable, str(template / "scripts" / "init.py"), *argv],
         cwd=str(target), capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
     )
 
 
@@ -187,6 +188,39 @@ def build_undo_target(i):
 
 def build_with_gitignore(i):
     return make(i, use_git=True, extra={".gitignore": "*.pyc\n"})
+
+
+# Detection fixtures. The JLGC project had 84 tests and got a TODO in its
+# RUNBOOK, because detect() never looked where its tests actually were.
+
+
+def build_nested_tests(i):
+    return make(i, use_git=True, extra={"backend/tests/test_x.py": "def test_x(): pass\n"})
+
+
+def build_requirements_include(i):
+    return make(i, use_git=True, extra={
+        "requirements.txt": "-r backend/requirements.txt\n",
+        "backend/requirements.txt": "pytest\nflask\n",
+    })
+
+
+def build_pyproject_tests_dir(i):
+    return make(i, use_git=True, extra={
+        "pyproject.toml": "[project]\nname = \"toy\"\n",
+        "tests/test_x.py": "def test_x(): pass\n",
+    })
+
+
+def build_maven_wrapper(i):
+    return make(i, use_git=True, extra={
+        "pom.xml": "<project></project>\n",
+        "mvnw": "#!/bin/sh\n",
+    })
+
+
+def build_package_array(i):
+    return make(i, use_git=True, extra={"package.json": "[]\n"})
 
 
 # --- assertions ------------------------------------------------------------
@@ -605,6 +639,24 @@ def app_is_an_area(target, _before, after, _out):
     return ""
 
 
+def command_detected(line: str):
+    """An assertion that project.yaml's `commands:` block holds this line."""
+
+    def check(_target, _before, after, _out):
+        text = after.get("project.yaml", b"").decode(errors="replace")
+        if line not in text.splitlines():
+            return f"project.yaml has no {line.strip()!r} line"
+        return ""
+
+    return check
+
+
+def project_yaml_written(_target, _before, after, _out):
+    if "project.yaml" not in after:
+        return "project.yaml was not written"
+    return ""
+
+
 #  name                                build             extra argv                            exit  assertion
 CASES = [
     ("no git -> refuses",               build_plain,      FILLED,                                1, untouched),
@@ -636,6 +688,12 @@ CASES = [
     ("second-gen keeps target purpose", build_git,        ["--help"],                            0, second_gen_keeps_target_purpose),
     ("second-gen, nothing given",       build_git,        ["--help"],                            0, second_gen_nothing_given),
     ("manifest records git describe",   build_git,        FILLED,                                0, manifest_records_describe),
+    # test-command detection - JLGC defect 3
+    ("detect pytest in nested tests",   build_nested_tests, FILLED,                              0, command_detected("  test: pytest")),
+    ("detect pytest through -r",        build_requirements_include, FILLED,                      0, command_detected("  test: pytest")),
+    ("detect pytest via pyproject tests dir", build_pyproject_tests_dir, FILLED,                 0, command_detected("  test: pytest")),
+    ("detect maven wrapper",            build_maven_wrapper, FILLED,                             0, command_detected("  test: ./mvnw test")),
+    ("package.json array no crash",     build_package_array, FILLED,                             0, project_yaml_written),
 ]
 
 
@@ -664,6 +722,7 @@ def main() -> int:
             [sys.executable, str(REPO / "scripts" / "init.py"),
              "--adopt", str(target), *argv],
             cwd=str(target), capture_output=True, text=True,
+            stdin=subprocess.DEVNULL,
         )
         after = inventory(target)
         output = proc.stdout + proc.stderr
