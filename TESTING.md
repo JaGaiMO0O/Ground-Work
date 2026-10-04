@@ -1,6 +1,7 @@
 # Testing Ground Work
 
-**Build 0A.** You are one of the first people outside its author to run this.
+You are one of the first people outside its author to run this. Quote the
+output of `git describe --tags` in every report - it names the build.
 
 This page is the whole brief. It says what to exercise, what a correct result
 looks like, and how to file what you find. Twenty minutes gets you through
@@ -12,8 +13,8 @@ Track A; Track B is the one that matters and takes about an hour.
 > git describe --tags
 > ```
 >
-> That should print `build-0A`, possibly with a commit suffix if you have
-> pulled since.
+> That should print the build named in the Teams announcement, possibly with a
+> commit suffix if you have pulled since.
 
 ---
 
@@ -58,7 +59,8 @@ time.
 ## Before you start
 
 You need **Python 3.8+** and **git**. Nothing else, no virtualenv, no install
-step.
+step. On macOS and Linux the command is often `python3` - use that wherever
+these docs say `python`.
 
 ```bash
 python --version
@@ -101,7 +103,7 @@ Answer as if it were real - vague answers hide the defects.
 | Line 1 of `AGENTS.md` | your project's name, no `<PROJECT_NAME>`, no mangled punctuation |
 | `README.md` | opens with your project name; the clone-and-adopt instructions are gone |
 | `STATUS.md` | your two answers in the goal ladder, not Ground Work's |
-| `LICENSE`, `TESTING.md`, `.gitlab/` | gone - they describe the template, not your project |
+| `LICENSE`, `TESTING.md`, `context/tasks/` | gone - they describe the template, not your project |
 | `grep -rn "<PROJECT_NAME>\|<ONE SENTENCE>" .` | no hits outside `profiles/` |
 
 Then read [START-HERE.md](START-HERE.md) and do what it says, **as written,

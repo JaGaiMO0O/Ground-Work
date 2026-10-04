@@ -140,7 +140,7 @@ this instruction came to be wrong.
 
 Found, reproduced, and not yet fixed. **Check this list before reporting
 anything** - what is here is known, so your time is better spent on what is
-not. Quote the build (`build-0A`) in any report.
+not. Quote the build (the output of `git describe --tags`) in any report.
 
 Both of these were found by the JLGC adoption trial on 2026-08-16; the full
 write-up, including causes and the files involved, is in
