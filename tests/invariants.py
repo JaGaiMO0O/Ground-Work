@@ -83,14 +83,14 @@ Stack: java8
 Health: fine
 
 ## Owns (authoritative)
-- thing
+- thing - `src/Thing.java:12`
 
 ## Interfaces
 
 ### In
 | Caller | Mechanism | Entry point | Notes |
 |---|---|---|---|
-| a | b | c | d |
+| a | b | `src/A.java:3` | d |
 
 ### Out
 - none
@@ -100,6 +100,43 @@ Health: fine
 
 ## Do not read unless specifically needed
 - none
+"""
+
+# A kind: local area whose card is checked against real files. Complete, so
+# the local cases test citations and nothing else.
+LOCAL_CARD = """# Area Card: app
+Path: src/app/  |  Surveyed: 2026-10-04  |  Owner: me
+Confidence: HIGH on everything
+
+Stack: python
+Health: fine
+
+## Owns (authoritative)
+- {claim}
+
+## Interfaces
+- none
+
+## Landmines
+- none
+
+## Do not read unless specifically needed
+- {skip}
+"""
+
+LOCAL_MAIN = """import os
+
+from legacy_tax import rate
+
+print(rate, os.sep)
+"""
+
+# A partial card: a source field and one section, nothing else.
+PARTIAL_CARD = """# Area Card: demo
+Repo: git@example.com:acme/demo.git @ v1.2.3
+
+## Landmines
+- totals round half-up per line, not per invoice - `src/Invoice.java:88`
 """
 
 SEAMS = """# Seams: demo
@@ -414,6 +451,72 @@ def m_template_repo_exempt():  # positive control
     patch("project.yaml", "profile: general", "profile: general\ntemplate: true")
 
 
+def setup_local(claim: str, skip: str = "none"):
+    write("src/app/main.py", LOCAL_MAIN)
+    write("src/app/legacy_tax.py", "rate = 0.2\n")
+    write("project.yaml", LOCAL_YAML.format(paths="      - src/app/**"))
+    write("map/app/CARD.md", LOCAL_CARD.format(claim=claim, skip=skip))
+    # --rgignore-only: the declared repo area points at example.com, and a real
+    # sync would block on DNS/SSH for ~15s per case.
+    run([sys.executable, "scripts/sync.py", "--rgignore-only"])
+
+
+def m_claim_uncited():
+    setup()
+    patch("map/demo/CARD.md", "## Landmines\n- none", "## Landmines\n- totals round half-up")
+
+
+def m_claim_unverified():  # positive control
+    setup()
+    patch("map/demo/CARD.md", "## Landmines\n- none",
+          "## Landmines\n- totals round half-up (unverified)")
+
+
+def m_claim_per_person():  # positive control
+    setup()
+    patch("map/demo/CARD.md", "## Landmines\n- none",
+          "## Landmines\n- totals round half-up (per Rania, 2026-10-04)")
+
+
+def m_local_citation_missing():
+    setup_local("the tax rate - `src/app/nope.py:2`")
+
+
+def m_local_citation_past_end():
+    setup_local("the tax rate - `src/app/main.py:2-40`")
+
+
+def m_skip_no_reason():
+    setup()
+    patch("map/demo/CARD.md", "## Do not read unless specifically needed\n- none",
+          "## Do not read unless specifically needed\n- `src/old/` - unused")
+
+
+def m_skip_referenced():
+    setup_local("the tax rate - `src/app/main.py:3`",
+                "`src/app/legacy_tax.py` - no calls in 12 months of access logs")
+
+
+def m_partial_survey_false():  # positive control
+    setup()
+    patch("project.yaml", "survey: true", "survey: false")
+    write("map/demo/CARD.md", PARTIAL_CARD)
+
+
+def m_partial_survey_true():
+    setup()
+    write("map/demo/CARD.md", PARTIAL_CARD)
+
+
+def m_card_at_2400():  # positive control
+    """Over the old 2,000 budget, under the new 2,500. Prose, not claims."""
+    setup()
+    path = WORK / "map" / "demo" / "CARD.md"
+    text = path.read_text(encoding="utf-8") + "\n"
+    filler = "filler prose. " * ((2400 * 4 - len(text)) // 14)
+    path.write_text(text + filler + "\n", encoding="utf-8")
+
+
 def m_example_card_broken():
     setup()
     patch(
@@ -559,6 +662,17 @@ CASES = [
     ("STATUS.template.md deleted",     m_status_template_gone,      2, "STATUS.template.md is missing", False),
     ("RUNBOOK omits a command",        m_runbook_missing_command,   2, "does not mention the 'test'",   False),
     ("RUNBOOK missing",                m_runbook_missing,           2, "RUNBOOK.md is missing",         False),
+    # card contracts C1-C3 (context/tasks/README.md)
+    ("card claim uncited",             m_claim_uncited,             1, "claim has no citation",         False),
+    ("claim marked unverified   [+]",  m_claim_unverified,          0, "",                              False),
+    ("claim cited per person    [+]",  m_claim_per_person,          0, "",                              False),
+    ("local citation file missing",    m_local_citation_missing,    1, "does not exist",                False),
+    ("local citation line past end",   m_local_citation_past_end,   1, "has only",                      False),
+    ("skip entry without reason",      m_skip_no_reason,            1, "needs a reason",                False),
+    ("skip entry referenced elsewhere", m_skip_referenced,          2, "referenced from",               False),
+    ("partial card, survey false [+]", m_partial_survey_false,      0, "",                              False),
+    ("partial card, survey true",      m_partial_survey_true,       1, "missing section",               False),
+    ("card at 2,400 tokens      [+]",  m_card_at_2400,              0, "",                              False),
     # these need real tracked files
     (".env committed",                 m_env_committed,             1, ".env is tracked",               True),
     ("file tracked under systems/",    m_systems_committed,         1, "tracked under systems/",        True),

@@ -87,7 +87,7 @@ areas:
 #     - src/api/**
 #     - tests/api/**
 #   owner: platform-team     # who to ask. Saves a round trip later.
-#   survey: true             # true -> check.py requires map/api/CARD.md
+#   survey: true             # true -> check.py requires a complete map/api/CARD.md; false allows a partial one
 #   exclude_from_search:     # mirrored into .rgignore by sync.py
 #     - "**/__snapshots__/**"
 #     - "**/*.generated.ts"

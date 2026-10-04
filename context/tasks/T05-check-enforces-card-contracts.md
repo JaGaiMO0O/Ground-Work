@@ -1,6 +1,6 @@
 # T05 - check.py enforces the card contracts; budget 2,500
 
-Status: ready
+Status: done
 Wave: 2
 Depends on: T04
 Build: build-0.1A
@@ -149,15 +149,63 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: this commit on `T05-check-enforces-card-contracts` (hash reported in chat)
 
 **What changed**
 
+- Before starting: the app created the worktree at `1a79a04`, behind `main`
+  (no `context/tasks/` at all). Fast-forwarded the branch to `main` (`d0c3f9f`)
+  so it starts from a `main` holding T04. No commits lost; no file changed.
+- `_lib.py`: `CARD_TOKEN_BUDGET = 2500`; `CODE_SUFFIXES` copied from
+  `_adopt.py` with the "T10 imports it from here" comment.
+- `check.py`: `card_entries` (bullets with continuation lines, table data rows,
+  comments blanked with line numbers kept, header rows dropped), `is_exempt`
+  (C1 exemptions), `card_claims`, `skip_entries`, `check_citations` (C1, plus
+  file/line existence for `kind: local`), `check_skip_list` (C2 reason, and the
+  reference warning for `kind: local`), `code_files`. Applied to the template,
+  every example card and every declared area's card. `check_cards` does C3:
+  `survey: false` needs a source field and one recognised section only.
+- `project.yaml:90` comment as specified.
+- `tests/invariants.py`: fixture `CARD` cites its Owns bullet and In-table row
+  (format only, `kind: repo`); 10 cases added, as in the table. No existing
+  case's exit code or expected text changed.
+- Interpretations where the contract is silent (lead may overrule):
+  - C2 entries include continuation lines too, as C1 claims do.
+  - "Recognised section" = `REQUIRED_CARD_SECTIONS` + the profile's extras.
+  - A claim is exempt if any of its lines holds a placeholder.
+  - `systems/ map/ context/ docs/` are skipped at the top level only;
+    `.git/` and `node_modules/` at any depth.
+  - A local citation naming a directory reports `does not exist`.
+
 **Verify output**
+
+- `python scripts/check.py` -> `ok   all invariants hold`, exit 0.
+- `--only claim` 3/3, `--only citation` 2/2, `--only skip` 2/2,
+  `--only partial` 2/2 (plus `--only 2,400` 1/1).
+- `python tests/invariants.py` -> `49/49 passed in 111s` (baseline was 39/39).
+- `grep -n "_adopt" scripts/check.py` -> no output, exit 1.
+- Rules disabled one at a time, each case failed as it should: citation
+  (`claim uncited` exit 0, want 1), file missing (expected text gone), line past
+  end (exit 0), skip reason (exit 0), reference warning (exit 0, want 2),
+  C3 survey:true branch (`partial card, survey true` exit 0), and with C3 off the
+  `survey false [+]` control exits 1. `check.py` restored and compared after.
+- The reference warning names `src/app/main.py`, the real referencing file.
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- `check.py` `code_files` does not skip `.claude/worktrees/`. In a main checkout
+  with live worktrees, a `kind: local` Do not read entry is searched across every
+  worktree's copy, which is slow, and the copies of the listed file itself count
+  as references (the "under the listed path" skip is relative to the root). The
+  skip list in the brief does not name it.
+- `profiles/legacy-modernization/scaffold/map/_TEMPLATE/CARD.md` is only checked
+  once the scaffold is applied (the legacy invariant cases do); this repo's own
+  `check.py` run never sees it.
+- `(per NAME, YYYY-MM-DD)` is format-only: `(per X, 2026-99-99)` passes.
 
 ---
 

@@ -16,6 +16,7 @@ Core rules apply to every project. A profile can add its own by exposing
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -234,15 +235,223 @@ def card_gaps(text: str, extra_sections: "list[str]"):
     return missing_sections, missing_fields
 
 
+# Contracts C1-C3 live in context/tasks/README.md. The forms a claim may be
+# cited with, and the blanks that are not claims at all.
+CITE_PATH = re.compile(r"`([^`\s]+):(\d+)(?:-(\d+))?`")
+CITE_OTHER = re.compile(
+    r"`schema:[^`\s]+`|\(per [^,()]+, \d{4}-\d{2}-\d{2}\)|\(unverified\)"
+)
+CARD_PLACEHOLDER = re.compile(r"<[a-z][a-z0-9 /_-]*>")
+TABLE_SEPARATOR = re.compile(r"^\s*\|[\s:|-]+\|?\s*$")
+CLAIM_SECTIONS = ("owns", "interfaces", "landmines")
+CITE_HINT = ("Cite it: `path:N` or `path:N-M`, `schema:OBJECT`, "
+             "(per NAME, YYYY-MM-DD) - or mark it (unverified).")
+
+# Not searched for references to a "Do not read" entry: Ground Work's own
+# folders (top level) and vendored or VCS trees (anywhere).
+SKIP_TOP_DIRS = {"systems", "map", "context", "docs"}
+SKIP_ANY_DIRS = {".git", "node_modules"}
+MAX_SCAN_BYTES = 1024 * 1024
+
+
+def card_entries(text: str):
+    """(section, line_number, text) for every bullet and table data row.
+
+    Comments are blanked with their newlines kept, so line numbers still point
+    into the real file. A bullet's entry includes its continuation lines - the
+    indented lines up to the next bullet, blank line or heading. A table row
+    followed by a `|---|` separator is a header, not an entry.
+    """
+    text = re.sub(r"<!--.*?-->", lambda m: "\n" * m.group(0).count("\n"),
+                  text, flags=re.S)
+    lines = text.splitlines()
+    entries: list = []
+    section = None
+    current = None  # the open bullet entry, as [section, line, [lines]]
+
+    def close():
+        nonlocal current
+        if current:
+            entries.append((current[0], current[1], "\n".join(current[2])))
+        current = None
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if line.startswith("#"):
+            close()
+            if line.startswith("## "):
+                section = line[3:].strip().lower()
+            continue
+        if not stripped:
+            close()
+            continue
+        if stripped in ("-", "*") or stripped.startswith(("- ", "* ")):
+            close()
+            current = [section, i + 1, [stripped]]
+            continue
+        if current and line[:1].isspace():
+            current[2].append(stripped)
+            continue
+        close()
+        if stripped.startswith("|") and not TABLE_SEPARATOR.match(stripped):
+            following = lines[i + 1] if i + 1 < len(lines) else ""
+            if not TABLE_SEPARATOR.match(following):
+                entries.append((section, i + 1, stripped))
+    close()
+    return entries
+
+
+def is_exempt(entry: str) -> bool:
+    """The C1 exemptions, which C2 shares: placeholders, none, n/a, bare -."""
+    if CARD_PLACEHOLDER.search(entry):
+        return True
+    if entry.startswith("|"):
+        return False
+    body = " ".join(entry[1:].split()).lower()
+    return body in ("", "none", "n/a")
+
+
+def card_claims(text: str):
+    """(line_number, text) for every C1 claim: entries under Owns, Interfaces
+    (with its ### subsections) and Landmines that are not exempt."""
+    return [
+        (line, entry)
+        for section, line, entry in card_entries(text)
+        if section and section.split()[0] in CLAIM_SECTIONS
+        and not is_exempt(entry)
+    ]
+
+
+def skip_entries(text: str):
+    """(line_number, text) for every C2 entry under `## Do not read...`."""
+    return [
+        (line, entry)
+        for section, line, entry in card_entries(text)
+        if section and section.startswith("do not read")
+        and entry[:1] in "-*" and not is_exempt(entry)
+    ]
+
+
+def line_count(path: Path) -> int:
+    data = path.read_bytes()
+    return data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0)
+
+
+def check_citations(card: Path, text: str, local: bool) -> None:
+    """C1. Every claim is cited. In a `kind: local` card, a `path:N` citation
+    must also point at a line that exists."""
+    g = "map"
+    where = rel(card)
+    for line, claim in card_claims(text):
+        paths = [m for m in CITE_PATH.finditer(claim) if "://" not in m.group(1)]
+        if not paths and not CITE_OTHER.search(claim):
+            first = claim.splitlines()[0]
+            error(g, f"{where}:{line}: claim has no citation: {first[:70]}",
+                  CITE_HINT)
+            continue
+        if not local:
+            continue
+        for m in paths:
+            target = ROOT / m.group(1)
+            if not target.is_file():
+                error(g, f"{where}:{line}: cites `{m.group(0)[1:-1]}`, but "
+                         f"{m.group(1)} does not exist",
+                      "Paths are relative to the repository root. Fix the "
+                      "path, or the claim is pointing at nothing.")
+                continue
+            count = line_count(target)
+            last = max(int(m.group(2)), int(m.group(3) or 0))
+            if last > count:
+                error(g, f"{where}:{line}: cites `{m.group(0)[1:-1]}`, but "
+                         f"{m.group(1)} has only {count} lines",
+                      "The code moved since the card was written. Re-find "
+                      "the line, and check the claim still holds.")
+
+
+def skip_name(path: str) -> str:
+    """The name a Do not read entry is referenced by: a directory's name, or a
+    file's stem."""
+    for tail in ("/**", "/*", "/"):
+        if path.endswith(tail):
+            return path[: -len(tail)].rstrip("/").split("/")[-1]
+    return Path(path).stem
+
+
+def code_files() -> "list[Path]":
+    found = []
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        here = Path(dirpath)
+        top = here == ROOT
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in SKIP_ANY_DIRS and not (top and d in SKIP_TOP_DIRS)
+        ]
+        for name in filenames:
+            path = here / name
+            if path.suffix.lower() not in lib.CODE_SUFFIXES:
+                continue
+            try:
+                if path.stat().st_size > MAX_SCAN_BYTES:
+                    continue
+            except OSError:
+                continue
+            found.append(path)
+    return found
+
+
+def check_skip_list(card: Path, text: str, local: bool, files: dict) -> None:
+    """C2. Each Do not read entry says how it is known to be dead. In a
+    `kind: local` card, an entry something still references is a warning."""
+    g = "map"
+    where = rel(card)
+    for line, entry in skip_entries(text):
+        spans = re.findall(r"`([^`]*)`", entry)
+        reason = " ".join(re.sub(r"`[^`]*`", " ", entry[1:]).split())
+        if not spans or len(reason) < 15:
+            error(g, f"{where}:{line}: Do not read entry needs a reason that "
+                     "says how it is known to be dead",
+                  "A backticked path, then the evidence: \"no hits in 12 months "
+                  "of logs\", or (per NAME, YYYY-MM-DD). \"Looks unused\" is a "
+                  "guess.")
+            continue
+        if not local:
+            continue
+        if "files" not in files:
+            files["files"] = [(rel(f), read(f)) for f in code_files()]
+        for span in spans:
+            name = skip_name(span)
+            if len(name) < 4:
+                continue
+            listed = span.rstrip("*").rstrip("/")
+            word = re.compile(rf"(?<!\w){re.escape(name)}(?!\w)")
+            for path_rel, body in files["files"]:
+                if path_rel == listed or path_rel.startswith(listed + "/"):
+                    continue
+                if word.search(body):
+                    warn(g, f"{where}:{line}: `{span}` is listed under Do not "
+                            f"read but referenced from {path_rel}",
+                         "Either it is not dead, or the reference is. Check "
+                         "before trusting the entry.")
+                    break
+
+
+def check_card_contracts(card: Path, text: str, local: bool, files: dict) -> None:
+    check_citations(card, text, local)
+    check_skip_list(card, text, local, files)
+
+
 def check_cards(ctx: Ctx) -> None:
     g = "map"
     extra = ctx.extra_card_sections
     map_dir = lib.MAP_DIR
 
+    files: dict = {}  # code files, read once and only if a local card needs them
+
     template = map_dir / "_TEMPLATE" / "CARD.md"
     if not template.exists():
         warn(g, "map/_TEMPLATE/CARD.md is missing")
     else:
+        check_card_contracts(template, read(template), False, files)
         sections, fields = card_gaps(read(template), extra)
         if sections or fields:
             error(
@@ -257,6 +466,7 @@ def check_cards(ctx: Ctx) -> None:
     for card in sorted(ROOT.glob("examples/*/CARD.md")) + sorted(
         ROOT.glob("profiles/*/examples/*/CARD.md")
     ):
+        check_card_contracts(card, read(card), False, files)
         sections, fields = card_gaps(read(card), extra)
         if sections or fields:
             error(
@@ -293,11 +503,22 @@ def check_cards(ctx: Ctx) -> None:
         if not text:
             continue
 
+        # C3: survey: true means complete and maintained. survey: false allows
+        # a partial card - a source field and whichever sections it has.
         sections, fields = card_gaps(text, extra)
+        if not area.survey:
+            known = lib.REQUIRED_CARD_SECTIONS + list(extra)
+            if len(sections) == len(known):
+                error(g, f"{name}: card has no recognised section",
+                      "A partial card needs at least one of: "
+                      + ", ".join(known))
+            sections = []
+            fields = [f for f in fields if f not in lib.REQUIRED_CARD_FIELDS]
         if sections:
             error(g, f"{name}: card missing section(s) " + ", ".join(sections))
         if fields:
             error(g, f"{name}: card missing header field(s) " + ", ".join(fields))
+        check_card_contracts(area.card, text, area.kind == "local", files)
 
         cost = lib.estimate_tokens(text)
         if cost > lib.CARD_TOKEN_BUDGET:
