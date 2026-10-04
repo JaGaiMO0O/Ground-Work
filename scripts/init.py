@@ -473,7 +473,8 @@ def adopt(args, profile: str) -> int:
     lib.info(
         "\n  Next, in " + target.name + ":\n"
         + "\n".join(f"    {i}. {s}" for i, s in enumerate(steps, 1))
-        + "\n\n  Then pick the busiest area and write its card.\n"
+        + "\n\n  As you work, add each landmine you hit to its area's card, with the"
+        + "\n  line that proves it. Run a full survey the third time you work in an area.\n"
     )
 
     if agents_left:

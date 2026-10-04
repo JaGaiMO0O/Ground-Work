@@ -147,17 +147,95 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T11-adr-0004-task-driven-cards` - the single `docs(T11)` commit on it
 
 **What changed**
 
+- `docs/decisions/0004-task-driven-cards.md` (new): Context (39-task payback,
+  ~1,047k vs ~27k; survey paying the orientation tax; uncited claim wrong;
+  live code in the skip list; repo contradicting its threshold), Decision
+  (four points), Consequences (good and costs), immutability comment.
+- `scripts/init.py`: adopt "Next" string only - "busiest area" line replaced
+  with the brief's text, wrapped over two lines. `TEMPLATE_ONLY_DIRS` untouched.
+- `scripts/new_card.py:84-94`: on `survey: false`, no warning; prints the
+  partial-card note instead. The "dedicated session" line is replaced with
+  "A full survey follows context/recipes/survey-area.md and starts by asking a
+  human."
+- `docs/playbook.md`: *When a card is worth writing* (cites ADR 0004, keeps the
+  over-documenting line); rule 1 "Never survey the same area twice" now matches
+  the survey-area skill word for word; the `LOW` promotion bullet now says a
+  partial card in an area worked 3+ times; Adoption paragraph; *Either way, in
+  order* and the *Resist surveying* sentence; an **ADR 0004** changelog
+  paragraph at the foot, separate from T08's 0.1A paragraph (which is unedited).
+- `.claude/skills/onboard/SKILL.md`: Step 2 example `survey: false`, with one
+  line on why; Step 3 is *Start the card, together* - the three questions kept
+  as the C4 interview, answers cited `(per NAME, YYYY-MM-DD)`, reads cited
+  `path:N`, unanswered -> `## Open questions` + `(unverified)`, partial card
+  stated as the expected result. The `Confidence:` advice is gone; citations
+  named as the safeguard; "A card that overstates..." sentence kept. The rule
+  "Never do the survey silently" became "Never read silently" (no survey in
+  this session any more).
+
 **How it was verified**
+
+- Baseline before any change: `check.py` exit 0, `tests/adopt.py` 31/31.
+- `grep -rn "busiest area" scripts docs/playbook.md .claude` -> nothing.
+- `grep -n "survey: true" .claude/skills/onboard/SKILL.md` -> nothing.
+- `python scripts/check.py` -> exit 0, "all invariants hold".
+- `python tests/adopt.py` -> 31/31 passed.
+- `new_card.py` on a `survey: false` area, in a `git archive` copy in the
+  scratchpad (area `scripts`, `survey: false`):
+
+  ```
+  ok   wrote map/scripts/CARD.md
+
+    scripts has 'survey: false', so this is a partial card. Fill only
+    what you know, with citations, and add landmines as tasks teach them.
+    A full survey is for the area's third task.
+
+    A full survey follows context/recipes/survey-area.md and starts by
+    asking a human.
+  ```
+- `init.py --adopt` into a scratch git repo; the Next block ends with:
+
+  ```
+    As you work, add each landmine you hit to its area's card, with the
+    line that proves it. Run a full survey the third time you work in an area.
+  ```
 
 **Deviations** (escalations raised, and the answers)
 
+- None escalated. One gap between the Verify block and the acceptance
+  criteria: the Verify grep also matches `write its card`, which still hits
+  three files outside Owns (listed under Follow-ups; one is the survey-area
+  skill, which this brief forbids changing). The acceptance criterion
+  ("busiest area" finds nothing) is met. I left those files alone.
+- No automated test for the `new_card.py` message: `tests/` is outside Owns,
+  and the brief asks for a manual run (output above).
+
 **Follow-ups** (found, not fixed - file and line)
 
+- `scripts/init.py:807` - the fresh-init "Next" message still says
+  `python scripts/new_card.py <area>   - then survey it`. It is outside T11's
+  one string, and is a survey-first instruction.
+- `scripts/_adopt.py:414-415` - generated `project.yaml` header: "set
+  `survey: true` on one when you are ready to write its card." It implies one
+  area should be surveyed after adoption. Adoption lane.
+- `.claude/README.md:29` - survey-area row still says "dedicated session ...
+  output only the card". Not wrong for a full survey, but it does not mention
+  the third-task trigger or the human questions.
+- `scripts/usage.py:265` - advice "Survey the areas they belong to" when files
+  are re-read in 3+ sessions. This roughly matches the threshold, but it could
+  point at promoting a partial card instead.
+- `tests/` - nothing covers `new_card.py` output. A test that `survey: false`
+  prints no `warn` line would hold this change in place.
+
 **Rollback**
+
+`git revert <T11 commit>` on `main`. It touches docs, two message strings and
+one new ADR file. There is no data or schema, and nothing else depends on the
+ADR yet. If the revert lands after T16, re-check that the `init.py` hunk
+reverts cleanly next to T16's `TEMPLATE_ONLY_DIRS` change (different blocks).
 ---
 
 ## Lead review

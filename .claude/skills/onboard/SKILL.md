@@ -20,8 +20,8 @@ Talk about time and money, not context windows.
   be better off than before.
 - **Their project, their words.** Names and descriptions in the card come from
   them. If you write it all yourself they will not trust it or maintain it.
-- **Never do the survey silently.** If you disappear for twenty tool calls they
-  learn nothing. Narrate briefly.
+- **Never read silently.** If you disappear for twenty tool calls they learn
+  nothing. Narrate briefly.
 
 ## Step 1 - show them what it is costing them now
 
@@ -51,31 +51,44 @@ areas:
     paths:
       - src/api/**
     owner: <their name or team>
-    survey: true
+    survey: false
 ```
 
 Ask which paths belong to it. They know; you would be guessing.
 
-## Step 3 - write the card, together
+`survey: false` is right for a first session: the card you start next is
+partial. A full survey comes later, the third time someone works in the area.
+
+## Step 3 - start the card, together
 
 ```bash
 python scripts/new_card.py api
 ```
 
-Then fill it in. Do the reading yourself - delegate wide reading to the
-`surveyor` subagent - but ask them for:
+Then ask them three questions. Only they can answer them - this is the
+interview a card starts from:
 
 - **Owns** - what is this area the authority on?
 - **Landmines** - "what has bitten you here before?" This is the question that
   produces the most valuable line in the whole repo, and only they can answer it.
 - **Do not read** - "is any of this dead?"
 
+Write each answer as a claim cited `(per NAME, YYYY-MM-DD)`, with their name and
+today's date. Open only what their answers point at, and cite what you read as
+`path:N`. Anything they could not answer goes under `## Open questions`, and the
+claim it bears on is marked `(unverified)`.
+
+Say it plainly: **a partial card is the expected result of a first session.** It
+grows as tasks teach the next landmine, and gets a full survey the third time
+someone works in this area.
+
 Keep it to one page. `check.py` will fail a card that grows past budget, and the
 reason is worth saying out loud: a card that costs as much as the code has no
 reason to exist.
 
-Be honest in `Confidence:`. Mark what you guessed. A card that overstates its
-certainty is worse than no card, because it gets trusted.
+The citations are the safeguard: `check.py` fails a claim that neither cites
+nor says `(unverified)`. A card that overstates its certainty is worse than no
+card, because it gets trusted.
 
 ## Step 4 - capture the task they do most
 
