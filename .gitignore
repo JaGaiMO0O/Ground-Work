@@ -24,6 +24,7 @@ desktop.ini
 *.swp
 .idea/
 .vscode/
+.claude/worktrees/
 __pycache__/
 *.pyc
 

@@ -144,11 +144,17 @@ def nuke(path: Path):
 def build_pristine():
     nuke(BASE)
     BASE.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(
-        REPO,
-        PRISTINE,
-        ignore=shutil.ignore_patterns("__pycache__", ".git", "systems"),
-    )
+    # The files git says are the template, not the whole disk: a live worktree
+    # under .claude/worktrees/ tripled this copy and the suite's runtime.
+    sys.path.insert(0, str(REPO / "scripts"))
+    import _lib
+
+    for rel in _lib.template_files(REPO):
+        if any(part in ("__pycache__", ".git", "systems") for part in rel.parts):
+            continue
+        destination = PRISTINE / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO / rel, destination)
 
 
 def seed_initialised():

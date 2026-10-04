@@ -1,6 +1,6 @@
 # T01 - Only template files travel: ask git, and keep context/tasks/ home
 
-Status: ready
+Status: done
 Wave: 1
 Depends on: T00
 Build: build-0.1A
@@ -132,15 +132,65 @@ No `Co-Authored-By` trailer. Stage only the files listed above. Never push.
 
 <!-- Worker fills this in. The header Status: line is the only status. -->
 
-Commit:
+Commit: see `git log` on branch `claude/serene-gauss-1d3d24` (`fix(T01): only template files travel`)
 
 **What changed**
 
+- `scripts/_lib.py`: `template_files(root)` - `git ls-files -z --cached --others
+  --exclude-standard` as bytes, split on `\0`, drops paths not on disk, sorted
+  and de-duplicated; falls back to `rglob` when `root` is not in a git work tree.
+- `scripts/_adopt.py`: `import _lib as lib`; `scaffold_plan()` takes candidates
+  from `lib.template_files(template)` filtered by top-level `include` name
+  (`rel.parts[0] == name`), all existing filters unchanged on top;
+  `SKIP_ON_ADOPT_PATHS = {"context/tasks"}`, honoured in `travels()` for the path
+  itself and anything under it.
+- `scripts/init.py`: `TEMPLATE_ONLY_DIRS = ("context/tasks",)`. The code at
+  `:77-78` already handles a nested path (`(ROOT / n).is_dir()`), no change.
+- `tests/invariants.py`: `build_pristine()` copies `_lib.template_files(REPO)`
+  file by file, still skipping `systems`, `.git`, `__pycache__`.
+- `.gitignore`: `.claude/worktrees/`.
+- `tests/adopt.py`: `run_template_init(template, target, *argv)` (`run_init` now
+  delegates to it); `no_live_content` fails on any `context/tasks/` path; new
+  case `only git's files travel` (throwaway git template, plants an excluded
+  worktree file, excluded `settings.local.json`, untracked `docs/new-note.md`;
+  adopts into fresh `make(99, ...)`).
+
 **Verify output**
+
+- Before the `_adopt.py` change, with `_lib.template_files` and the test in place:
+  - `--only "git's files"` -> 0/1, `an ignored worktree travelled:
+    ['.claude/worktrees/w1/scripts/check.py']`; with `--keep`, the target's
+    `.claude/` also held `settings.local.json` and `worktrees/`.
+  - `--only "no live content"` -> 0/1, `our task log travelled:
+    ['context/tasks/README.md', ...]`.
+- After:
+  - `python tests/adopt.py --only "git's files"` -> 1/1 passed
+  - `python tests/adopt.py --only "no live content"` -> 1/1 passed
+  - `python tests/adopt.py` -> 23/23 passed in 76s
+  - `python tests/invariants.py` -> 39/39 passed in 94s
+  - `python scripts/check.py` -> exit 0
+- Revert check: `SKIP_ON_ADOPT_PATHS = set()` briefly -> `no live content
+  travels` fails with `our task log travelled: [...]`; restored, diff clean.
+- Plain init: copied `_lib.template_files(.)` (130 files) to a scratch dir
+  outside the repo, ran `python scripts/init.py --project t --profile general
+  --purpose p --done d` -> exit 0, printed `removed template-only file(s):
+  LICENSE, TESTING.md, context/tasks/`; `context/` left with `glossary.md`,
+  `handoffs`, `recipes` only.
+- Live-worktree plan: `_adopt.scaffold_plan(<main checkout>, <dummy target>)`
+  with 4 live worktrees in `.claude/worktrees/` -> 47 planned, 0 under
+  `worktrees`, 0 under `context/tasks`. Same 47 as planning from this worktree.
+  The old `rglob` plan minus worktrees was 64; the 17 difference is exactly the
+  `context/tasks/` files (incl. `_TEMPLATE.md`).
 
 **Deviation requests**
 
+None.
+
 **Found, not fixed**
+
+- `scripts/init.py:762-763`: the message after removing template-only paths
+  says "licence and testing brief are yours to write", which no longer
+  describes everything removed now that `context/tasks/` is in the list.
 
 ---
 

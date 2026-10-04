@@ -30,6 +30,8 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import _lib as lib
+
 # Never copied into the target, and never proposed as an area.
 NOISE = {
     ".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv",
@@ -66,6 +68,9 @@ NOT_ADOPTED = {"README.md"}
 # examples you copy, and a doc that describes files which are not there is worse
 # than three unused files that are.
 SKIP_ON_ADOPT_DIRS = {"tests"}
+# Ground Work's own work log. Tracked, so asking git does not keep it home.
+# Must match TEMPLATE_ONLY_DIRS in init.py - plain init deletes the same paths.
+SKIP_ON_ADOPT_PATHS = {"context/tasks"}
 SKIP_ON_ADOPT_FILES = {"scripts/init.py", "scripts/_adopt.py"}
 SHIM_SUFFIXES = {".sh", ".ps1"}
 
@@ -86,6 +91,9 @@ def travels(rel: Path) -> bool:
     if parts[0] in SKIP_ON_ADOPT_DIRS:
         return False
     if rel.as_posix() in SKIP_ON_ADOPT_FILES:
+        return False
+    posix = rel.as_posix()
+    if any(posix == p or posix.startswith(p + "/") for p in SKIP_ON_ADOPT_PATHS):
         return False
     if len(parts) == 2 and parts[0] == "scripts" and rel.suffix in SHIM_SUFFIXES:
         return False
@@ -316,15 +324,13 @@ def scaffold_plan(template: Path, target: Path, profile: str = "general",
     # include list, so the scaffold version is the one that survives - the same
     # precedence plain init.py gets by applying the scaffold last.
     plan: "dict[Path, tuple[Path, Path, str]]" = {}
+    # From git, not the disk: an ignored worktree or local settings file is on
+    # disk but is not part of the template. See lib.template_files().
+    files = lib.template_files(template)
     for name in include:
         if name in GENERATED_HERE or name in NOT_ADOPTED:
             continue
-        source = template / name
-        if not source.exists():
-            continue
-        sources = [source] if source.is_file() else [
-            p for p in source.rglob("*") if p.is_file()
-        ]
+        sources = [template / rel for rel in files if rel.parts[0] == name]
         for item in sources:
             rel = item.relative_to(template)
             if any(part in NOISE for part in rel.parts):

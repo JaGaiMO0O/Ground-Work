@@ -44,9 +44,10 @@ STATUS_TEMPLATE = ROOT / "STATUS.template.md"
 # own text says a scaffolded project is theirs, so the file has to go for the
 # file to be honest. --adopt never copies these; only this path could.
 TEMPLATE_ONLY_FILES = ("LICENSE", "TESTING.md")
-# Empty, not removed: `.gitlab/` lived here until GitLab Issues turned out to be
-# disabled org-wide. The next tracker-shaped directory goes in the same slot.
-TEMPLATE_ONLY_DIRS = ()
+# `.gitlab/` lived here until GitLab Issues turned out to be disabled org-wide.
+# `context/tasks/` is Ground Work's own work log, not a project's.
+# Must match SKIP_ON_ADOPT_PATHS in _adopt.py - --adopt skips the same paths.
+TEMPLATE_ONLY_DIRS = ("context/tasks",)
 
 PROJECT_TOKEN = "<PROJECT_NAME>"
 PURPOSE_RE = re.compile(r"<ONE SENTENCE[^>]*for>")

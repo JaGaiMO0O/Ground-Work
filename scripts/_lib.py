@@ -608,6 +608,35 @@ def tracked_files() -> "list[str]":
     return result.stdout.splitlines() if result.returncode == 0 else []
 
 
+def template_files(root: Path) -> "list[Path]":
+    """Every file that is part of the template at `root`, relative to it.
+
+    Asked of git, not walked off the disk. Claude Code puts worker worktrees in
+    `.claude/worktrees/` inside this repo; git ignores them, so `git status` is
+    clean, but a filesystem walk is not. An adoption from `main` with one live
+    worktree planned 188 files, 124 of them a complete copy of that worktree -
+    and the same walk would carry a developer's gitignored
+    `.claude/settings.local.json` into somebody else's project.
+
+    Tracked files plus untracked-but-not-ignored ones, so a file added and not
+    yet committed still counts. A template downloaded as a zip has no git, and
+    falls back to walking the directory.
+    """
+    root = Path(root)
+    if is_git_repo(root):
+        # -z and bytes: text mode translates newlines on Windows, which has
+        # already corrupted paths piped to and from git three times.
+        result = subprocess.run(
+            ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            cwd=str(root), capture_output=True,
+        )
+        if result.returncode == 0:
+            names = result.stdout.decode("utf-8", errors="replace").split("\0")
+            # Deleted but not yet committed: still in the index, not on disk.
+            return sorted({Path(n) for n in names if n and (root / n).is_file()})
+    return sorted(p.relative_to(root) for p in root.rglob("*") if p.is_file())
+
+
 def has_commits() -> bool:
     """A freshly `git init`ed repo tracks nothing, which would make every
     'is X tracked?' check fire spuriously on day one."""

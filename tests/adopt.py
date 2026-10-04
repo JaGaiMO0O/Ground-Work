@@ -36,7 +36,10 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-BASE = Path(tempfile.gettempdir()) / f"adopt-harness-{os.getpid()}"
+sys.path.insert(0, str(REPO / "scripts"))
+import _lib  # noqa: E402
+
+BASE =Path(tempfile.gettempdir()) / f"adopt-harness-{os.getpid()}"
 
 LEGACY_PROFILE = "legacy-modernization"
 
@@ -106,11 +109,17 @@ def paths_of(target: Path) -> "set[str]":
     return found
 
 
-def run_init(target: Path, *argv):
+def run_template_init(template: Path, target: Path, *argv):
+    """Run a GIVEN template's init.py from inside `target`. The cases that need
+    a template other than this repo build one and adopt from it."""
     return subprocess.run(
-        [sys.executable, str(REPO / "scripts" / "init.py"), *argv],
+        [sys.executable, str(template / "scripts" / "init.py"), *argv],
         cwd=str(target), capture_output=True, text=True,
     )
+
+
+def run_init(target: Path, *argv):
+    return run_template_init(REPO, target, *argv)
 
 
 # --- fixtures --------------------------------------------------------------
@@ -311,6 +320,11 @@ def no_live_content(target, _before, after, _out):
                 if k.startswith(folder) and not k.rsplit("/", 1)[1].startswith("_")]
         if live:
             return f"non-template {what} travelled: {sorted(live)[:3]}"
+    # Ground Work's own task log. Tracked, so asking git does not keep it home -
+    # only the explicit exclusion does.
+    tasks = [k for k in after if k.startswith("context/tasks/")]
+    if tasks:
+        return f"our task log travelled: {sorted(tasks)[:3]}"
     for wanted in ("context/handoffs/_TEMPLATE.md", "docs/decisions/_TEMPLATE.md"):
         if wanted not in after:
             return f"{wanted} should have travelled and did not"
@@ -449,6 +463,57 @@ def undo_refuses_without_manifest(target, _before, _after, _out):
     return ""
 
 
+def only_git_files_travel(_target, _before, _after, _out):
+    """The template is what git says it is, not whatever is on disk. Found at
+    the wave-0 gate: a live worker worktree under `.claude/worktrees/` is
+    ignored by git, and an adoption copied all 124 files of it anyway. A
+    developer's gitignored local settings would have gone the same way."""
+    template = BASE / "git-template"
+    nuke(template)
+    for rel in _lib.template_files(REPO):
+        destination = template / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO / rel, destination)
+    git(template, "init", "-q")
+    git(template, "config", "user.email", "t@t")
+    git(template, "config", "user.name", "t")
+    git(template, "config", "gc.auto", "0")
+    git(template, "add", "-A")
+    if git(template, "commit", "-qm", "template").returncode != 0:
+        return "fixture error: could not commit the throwaway template"
+
+    # Planted after the commit. The first two are ignored, the way the app
+    # ignores its worktrees; the third is new work nobody has committed yet.
+    planted = {
+        ".claude/worktrees/w1/scripts/check.py": "print('a worktree')\n",
+        ".claude/settings.local.json": "{}\n",
+        "docs/new-note.md": "# not committed yet\n",
+    }
+    for rel, text in planted.items():
+        path = template / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    exclude = template / ".git" / "info" / "exclude"
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    with exclude.open("a", encoding="utf-8") as handle:
+        handle.write("\n.claude/worktrees/\n.claude/settings.local.json\n")
+
+    fresh = make(99, use_git=True)
+    result = run_template_init(template, fresh, "--adopt", str(fresh), *FILLED)
+    if result.returncode != 0:
+        return "adoption from the throwaway template exited %d" % result.returncode
+    landed = inventory(fresh)
+    worktree = [k for k in landed if "worktrees" in k]
+    if worktree:
+        return f"an ignored worktree travelled: {sorted(worktree)[:2]}"
+    local = [k for k in landed if k.endswith("settings.local.json")]
+    if local:
+        return f"ignored local settings travelled: {local}"
+    if "docs/new-note.md" not in landed:
+        return "an untracked, not-ignored file did not travel"
+    return ""
+
+
 def app_is_an_area(target, _before, after, _out):
     """One file is enough to be an area. Requiring two silently dropped the
     single-file serving layer that every session was reading."""
@@ -476,6 +541,7 @@ CASES = [
     ("one-file directory is an area",   build_git,        FILLED,                                0, app_is_an_area),
     ("carries only what it runs",       build_git,        FILLED,                                0, carries_only_what_runs),
     ("no template-only files travel",   build_git,        FILLED,                                0, no_template_only_files_travel),
+    ("only git's files travel",         build_git,        ["--help"],                            0, only_git_files_travel),
     # the three defects the Name Screening adoption found
     ("no live content travels",         build_git,        FILLED,                                0, no_live_content),
     ("router arrives personalized",     build_git,        FILLED,                                0, agents_personalized),
