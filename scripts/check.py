@@ -16,10 +16,10 @@ Core rules apply to every project. A profile can add its own by exposing
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Callable
 
@@ -238,9 +238,9 @@ def card_gaps(text: str, extra_sections: "list[str]"):
 # Contracts C1-C3 live in context/tasks/README.md. The forms a claim may be
 # cited with, and the blanks that are not claims at all.
 CITE_PATH = re.compile(r"`([^`\s]+):(\d+)(?:-(\d+))?`")
-CITE_OTHER = re.compile(
-    r"`schema:[^`\s]+`|\(per [^,()]+, \d{4}-\d{2}-\d{2}\)|\(unverified\)"
-)
+CITE_OTHER = re.compile(r"`schema:[^`\s]+`|\(unverified\)")
+# A person's word counts only on a real date: 2026-99-99 is the right shape.
+CITE_PER = re.compile(r"\(per [^,()]+, (\d{4}-\d{2}-\d{2})\)")
 CARD_PLACEHOLDER = re.compile(r"<[a-z][a-z0-9 /_-]*>")
 TABLE_SEPARATOR = re.compile(r"^\s*\|[\s:|-]+\|?\s*$")
 CLAIM_SECTIONS = ("owns", "interfaces", "landmines")
@@ -344,7 +344,19 @@ def check_citations(card: Path, text: str, local: bool) -> None:
     where = rel(card)
     for line, claim in card_claims(text):
         paths = [m for m in CITE_PATH.finditer(claim) if "://" not in m.group(1)]
-        if not paths and not CITE_OTHER.search(claim):
+        pers, bad_dates = [], []
+        for m in CITE_PER.finditer(claim):
+            try:
+                date.fromisoformat(m.group(1))
+                pers.append(m)
+            except ValueError:
+                bad_dates.append(m.group(0))
+        if not paths and not pers and not CITE_OTHER.search(claim):
+            if bad_dates:
+                error(g, f"{where}:{line}: claim cites an invalid date: "
+                         f"{bad_dates[0]}",
+                      "Write the date of the interview as YYYY-MM-DD.")
+                continue
             first = claim.splitlines()[0]
             error(g, f"{where}:{line}: claim has no citation: {first[:70]}",
                   CITE_HINT)
@@ -378,24 +390,23 @@ def skip_name(path: str) -> str:
 
 
 def code_files() -> "list[Path]":
+    """The project's code files, as git lists them. A walk of the disk also
+    searched every worktree under .claude/worktrees/ - and a worktree's copy
+    of a dead file counted as something referencing it."""
     found = []
-    for dirpath, dirnames, filenames in os.walk(ROOT):
-        here = Path(dirpath)
-        top = here == ROOT
-        dirnames[:] = [
-            d for d in dirnames
-            if d not in SKIP_ANY_DIRS and not (top and d in SKIP_TOP_DIRS)
-        ]
-        for name in filenames:
-            path = here / name
-            if path.suffix.lower() not in lib.CODE_SUFFIXES:
+    for relpath in lib.template_files(ROOT):
+        parts = relpath.parts
+        if parts[0] in SKIP_TOP_DIRS or any(p in SKIP_ANY_DIRS for p in parts[:-1]):
+            continue
+        path = ROOT / relpath
+        if path.suffix.lower() not in lib.CODE_SUFFIXES:
+            continue
+        try:
+            if path.stat().st_size > MAX_SCAN_BYTES:
                 continue
-            try:
-                if path.stat().st_size > MAX_SCAN_BYTES:
-                    continue
-            except OSError:
-                continue
-            found.append(path)
+        except OSError:
+            continue
+        found.append(path)
     return found
 
 
