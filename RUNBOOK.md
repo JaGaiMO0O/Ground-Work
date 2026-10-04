@@ -71,7 +71,14 @@ that the undo puts the project back byte for byte. About 40 seconds.
 python tests/adopt.py
 ```
 
-All three must be green before a commit. A failure in `tests/invariants.py`
+The scan suite. Feeds the secret scan's regex fallback one-line files and asserts
+that real secrets still fire while code and placeholders do not. Under a second.
+
+```bash
+python tests/scan.py
+```
+
+All four must be green before a commit. A failure in `tests/invariants.py`
 usually means a rule changed without its test, or a rename missed a path.
 
 Useful while working on one rule:

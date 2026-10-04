@@ -112,17 +112,89 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T12-scan-false-positive` - the commit that carries this
+Handoff (hash reported to the user; not amended in).
 
 **What changed**
 
+- `scripts/scan.py`: new `looks_like_expression(value)` (true on `(` or `[`),
+  applied in `regex_scan` only when `rule == "password-property"`, right after
+  `looks_like_placeholder`. No other rule, regex or the placeholder filter touched.
+- `tests/scan.py` (new): 6 cases from the brief's table, one-line `case.py` per
+  case in `<tmp>/scan-tests-<pid>/case-N/`, calls `scan.regex_scan` directly.
+  A plain temp dir works - `iter_files` uses `rglob`, not git - so no git repo
+  is initialised. Positives assert the expected rule is among those returned
+  (and the result is non-empty); negatives assert exactly empty (per the
+  escalation answer below).
+- `project.yaml`: `test-scan: python tests/scan.py` under `commands:`.
+- `RUNBOOK.md` *Test*: scan suite paragraph + `bash` block; "All three" ->
+  "All four". *Open defects* untouched (T14).
+- File modes: all 10 `scripts/*.sh` and 5 `scripts/adapters/**/*.sh` 100644 ->
+  100755 via `git update-index --chmod=+x`. Blob hashes unchanged, so no content
+  change.
+
 **How it was verified**
+
+- Before step 1: `python tests/scan.py` -> **3/6**, exit 1; the three failures
+  were exactly the code-expression cases (`re.compile(`, `os.environ.get(...)`,
+  `getpass()`), each returning `password-property`. After step 1: **6/6**, exit 0.
+- `python scripts/check.py` -> exit 0 ("all invariants hold").
+- `python tests/invariants.py` 51/51, `tests/hooks.py` 26/26,
+  `tests/adopt.py` 31/31.
+- `git ls-files -s scripts/*.sh scripts/adapters` -> `100755` on every `.sh`
+  (`rest.py` stays 100644).
+- `python scripts/scan.py` (no gitleaks here, regex fallback) -> exit 1:
+
+  ```
+  warn no gitleaks/trufflehog on PATH - scanned the WORKING TREE ONLY.
+            2  password-assignment
+  FAIL 2 NEW potential secret(s) since the baseline:
+         tests/scan.py:35  password-assignment
+         docs/plan/tasks/T12-scan-false-positive.md:57  password-assignment
+  ```
+
+  Both are the deliberate fake `hunter2xyz` fixture: one in the new suite, one in
+  this brief's case table (already on `main` before this task). Zero
+  `password-property` hits remain in the repo. I did **not** run `--update`:
+  `.secrets-baseline` is tracked and not in *Owns* - see Follow-ups.
 
 **Deviations** (escalations raised, and the answers)
 
+- **ESCALATION T12** - the "quoted assignment secret" case
+  (the quoted `hunter2xyz` line) returns both `password-assignment` and
+  `password-property`, not only `password-assignment`; step 1 does not change
+  that (no `(`/`[`). Options: 1) positives by inclusion, negatives exactly empty;
+  2) exact sets, change case 2's expectation; 3) make `password-property` skip
+  quoted values (outside step 1). Recommended 1.
+  **Answer: option 1, approved.** Positives assert the expected rule is among
+  those returned and the result is non-empty; negatives assert exactly empty; a
+  one-line comment at that case in `tests/scan.py` says both rules fire today;
+  the double hit goes to Follow-ups. Case count stays 6/6. Implemented as such.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- One quoted secret yields two findings, so two baseline fingerprints
+  (`scripts/scan.py:63-68`): `password-assignment` and `password-property` both
+  match the quoted `hunter2xyz` line. Fix later by deduplicating per line, or by
+  making `password-property` skip quoted values.
+- `scripts/scan.py` on this branch exits 1 against the committed
+  `.secrets-baseline`: the two fake `hunter2xyz` fixtures above
+  (`tests/scan.py:35`, this brief at `:57`). The brief's line is already on
+  `main`, so `main` fails the gate today too. Lead call: `python scripts/scan.py
+  --update` after merge, or exclude `tests/scan.py` / `docs/plan/` from the scan.
+- `scripts/scan.py:100` - `iter_files` tests `path.parts` of the **absolute**
+  path against `SKIP_DIRS`, so a repo that sits anywhere under a directory
+  named `build`, `target`, `vendor`, `dist`, `venv`... is skipped entirely and
+  reports clean. Reproduced: `DB_PASSWORD=s3cr3tValue9` in
+  `<tmp>/build/repo/a.py` -> `regex_scan` returns `[]`. Should test the parts
+  relative to `root`. A silent false-clean in a security gate - worth a brief.
+
 **Rollback**
+
+`git revert <T12 commit>` on `main` (or `git revert -m 1 <merge>` if merged
+`--no-ff`). It restores `scan.py`, removes `tests/scan.py` and the `test-scan`
+command, reverts the RUNBOOK paragraph, and puts the `.sh` modes back to 100644.
+No migration, no data, no baseline change to undo.
 ---
 
 ## Lead review

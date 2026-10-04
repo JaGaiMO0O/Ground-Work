@@ -34,6 +34,7 @@ commands:
   test: python tests/invariants.py
   test-hooks: python tests/hooks.py
   test-adopt: python tests/adopt.py
+  test-scan: python tests/scan.py
   usage: python scripts/usage.py
 
 defaults:
