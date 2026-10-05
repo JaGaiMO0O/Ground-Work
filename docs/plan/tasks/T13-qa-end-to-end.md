@@ -38,7 +38,7 @@ Record every step's command and result in Handoff, as a table:
    `python scripts/scan.py` itself (expect exit 0).
 2. **Transcript discovery.** Run the real-data check from T03's *Verify*.
    Expect every folder to match.
-3. **Older Python.** `py -0`. If any Python below 3.12 is installed, run all four
+3. **Older Python.** `py -0`. If any Python below 3.12 is installed, run all five
    suites under the oldest one. If none is, say so - do not install one.
 4. **Fresh project from a clone.** `git clone` this repo (the local path) into a
    temp directory - a clone, so tags come with it. Run
@@ -64,6 +64,11 @@ Record every step's command and result in Handoff, as a table:
    the card into Handoff.
 8. **Scan.** Run `python scripts/scan.py` in the JLGC copy from step 6 before
    undo. Confirm `_NUMERIC_TOKEN = re.compile(` is no longer reported.
+   Then the T17 check: make `<temp>/build/repo/`, a fresh `git init` with one
+   file `a.py` holding `DB_PASSWORD=s3cr3tValue9`, copy `scripts/` into it, and
+   run `python scripts/scan.py` there. **Pass: it reports 1 `password-property`.**
+   With no baseline yet, the first run records it and exits 0 - expected. A
+   report of no findings is a security failure - say so at the top.
 9. **usage.py.** `python scripts/usage.py --all` runs and reports sessions.
 10. **Could not verify.** List plainly: macOS, Linux, a real Java/Maven project
     (none on this machine), any Python version you could not run, and anything
@@ -112,6 +117,7 @@ Branch / commit:
 **Follow-ups** (found, not fixed - file and line)
 
 **Rollback**
+
 ---
 
 ## Lead review

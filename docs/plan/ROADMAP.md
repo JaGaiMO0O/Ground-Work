@@ -55,8 +55,8 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T11 | ADR 0004: cards grow from tasks | 4 | Workflow | Merged | `f4e29bd` |
 | T12 | scan.py false positive; scan suite | 4 | Scan | Merged | `b3710ef` |
 | T16 | docs/plan stays home; null scripts keep install | 4 | Adoption | Merged | `71dddaf` |
-| T17 | **Security:** scan repos under build/vendor dirs | 5 | Scan | Not started | |
-| T18 | Last survey-first messages | 5 | Workflow | Not started | |
+| T17 | **Security:** scan repos under build/vendor dirs | 5 | Scan | Merged | `6f9a0e3` |
+| T18 | Last survey-first messages | 5 | Workflow | Merged | `cf1e185` |
 | T13 | QA end to end | 6 | QA | Not started | |
 | T14 | Release prep | 7 | Release | Not started | |
 
@@ -77,8 +77,8 @@ After T13 reports. **Go** only if all of these hold:
 
 ## Cut line
 
-**Must ship:** T13, T14, and **T17 (security)**. Merged: T11, T12, T16.
-**May be cut to hold a date:** T18 - wording only; the tools still work.
+**Must ship:** T13, T14. Merged: T11, T12, T16, **T17 (security)**, T18.
+**May be cut to hold a date:** nothing left - only T13 and T14 remain, and both gate the tag.
 Security fixes are never cut to hold a date.
 
 ---
@@ -91,7 +91,7 @@ Security fixes are never cut to hold a date.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 12 empty worktree
+- [ ] Archive the finished task sessions in the app - their 17 empty worktree
       folders under `.claude/worktrees/` stay locked until you do.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
@@ -121,12 +121,26 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | Gap tests (D-11) | standard |
 | One quoted secret yields two scan findings (`password-assignment` and `password-property`), so two baseline fingerprints | T12 |
 | No test covers `new_card.py`'s message for a `survey: false` area | T11 |
+| `usage.py:265` says promote with a full survey but names `new_card.py`, which only starts a card; promotion is the `survey-area` skill (lead brief wording) | T18 |
+| `init.py:807` step 4 of "Next" is ~95 columns, wider than steps 1-3 (~80) | T18 |
+| `scan.py` here runs the regex fallback only - no gitleaks/trufflehog on PATH, so history is unscanned (it warns) | T17 |
 
 ---
 
 ## Status log
 
 Newest first. Lead only.
+
+**2026-10-05**
+
+- **Wave 5 merged** `--no-ff` after the user's review: T17 `6f9a0e3` (security),
+  T18 `cf1e185`. Integrated run first: check 0, invariants 51/51, hooks 26/26,
+  adopt 32/32, scan 8/8, `scan.py` exit 0. Lead repro of T17: a secret in a repo
+  under `build/`, scanned by absolute path, was `[]` on `main` and found after;
+  `vendor/` inside a repo still skipped. No escalations. Three follow-ups to
+  known issues. T13 brief: five suites under older Python; step 8 adds a live
+  T17 check (a repo under `build/` must report its secret), dry-run by the lead.
+  Next: wave 6, T13.
 
 **2026-10-04**
 
