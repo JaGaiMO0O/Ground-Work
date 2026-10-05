@@ -1,7 +1,7 @@
 # T14 - Prepare the build-0.1A release
 
-Wave: 7
-Depends on: T13
+Wave: 8
+Depends on: T13, T19
 Lane: Release
 Estimate: S (~30 min)
 Build: build-0.1A
@@ -45,15 +45,19 @@ has to be cheap to produce: two command runs, no writing.
    `docs/plan/ROADMAP.md`. Add to *Known rough edges*: cards written under
    `build-0A` carry no citations and now fail `check.py`; add citations or mark
    claims `(unverified)`; there is no `--update` yet.
+   **TESTING.md, before Track A** (not inside Tracks A-C): one tester note -
+   on Windows, clone into a short path, or run
+   `git config --global core.longpaths true` first; a deep folder (OneDrive,
+   nested project dirs) fails with `Filename too long` (T13 F5).
 3. **STATUS.md**, human zone: **Now** - `build-0.1A ready for a small rollout.`
    **Next** - the original tester re-runs tasks 1 and 4; rollout testers send
    before/after `usage.py` files. Set `reviewed:` to today. Leave **Done means**
    and the blockers' text unchanged. Run `python scripts/status.py`.
 4. **Handoff**: `python scripts/handoff.py "build 0.1A release"`, then fill it in:
    - *Goal*: release 0.1A.
-   - *Done*: one line per task T00-T18 with its commit hash (from `git log`);
+   - *Done*: one line per task T00-T19 with its commit hash (from `git log`);
      T13's summary line.
-   - *Open*: every item under T13's *Found, not fixed*; the deferred list -
+   - *Open*: T13's follow-ups F3-F6 (F1 and F2 are fixed by T19); the deferred list -
      `--update`; `.ps1` adapters on macOS; `CLAUDE_CONFIG_DIR`; nested `.csproj`;
      the dead `tests/invariants.py` allow entry in adopted `settings.json`;
      promoting cards from `usage.py` counts; an ADR correcting 0003's weight

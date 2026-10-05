@@ -126,17 +126,17 @@ list, in a lead commit on `main`. Nothing gets dropped.
 
 ---
 
-## Lanes - waves 4 to 7
+## Lanes - waves 4 to 8
 
 Each file belongs to one lane. Tasks in the same wave sit in different lanes.
 
-| Lane | Files | W4 | W5 | W6 | W7 |
-|---|---|---|---|---|---|
-| Workflow | `docs/decisions/0004-*`, `scripts/init.py` *(message strings)*, `scripts/new_card.py` *(messages)*, `docs/playbook.md`, `.claude/skills/onboard/SKILL.md`, `.claude/README.md`, `scripts/usage.py` *(advice string)*, `scripts/_adopt.py` *(project.yaml header)* | T11 | T18 | | |
-| Scan | `scripts/scan.py`, `tests/scan.py`, `project.yaml`, `RUNBOOK.md`, `.sh` file modes | T12 | T17 | | T14 *(RUNBOOK)* |
-| Adoption | `scripts/_adopt.py` *(logic)*, `scripts/init.py` *(`TEMPLATE_ONLY_DIRS` block)*, `tests/adopt.py`, `README.md`, `TESTING.md` | T16 | | | T14 *(TESTING)* |
-| QA | none - scratch copies outside the repo | | | T13 | |
-| Release | `TESTING.md`, `RUNBOOK.md`, `STATUS.md`, `context/handoffs/` | | | | T14 |
+| Lane | Files | W4 | W5 | W6 | W7 | W8 |
+|---|---|---|---|---|---|---|
+| Workflow | `docs/decisions/0004-*`, `scripts/init.py` *(message strings)*, `scripts/new_card.py` *(messages)*, `docs/playbook.md`, `.claude/skills/onboard/SKILL.md`, `.claude/README.md`, `scripts/usage.py` *(advice string)*, `scripts/_adopt.py` *(project.yaml header)* | T11 | T18 | | | |
+| Scan | `scripts/scan.py`, `tests/scan.py`, `project.yaml`, `RUNBOOK.md`, `.sh` file modes | T12 | T17 | | | T14 *(RUNBOOK)* |
+| Adoption | `scripts/_adopt.py` *(logic)*, `scripts/init.py` *(`TEMPLATE_ONLY_DIRS` block, `undo()` and its message)*, `tests/adopt.py`, `README.md`, `TESTING.md` | T16 | | | T19 | T14 *(TESTING)* |
+| QA | none - scratch copies outside the repo | | | T13 | | |
+| Release | `TESTING.md`, `RUNBOOK.md`, `STATUS.md`, `context/handoffs/` | | | | | T14 |
 
 `scripts/init.py` and `scripts/_adopt.py` are split by block: message strings and
 the generated `project.yaml` header belong to Workflow; logic belongs to Adoption.

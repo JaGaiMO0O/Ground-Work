@@ -29,7 +29,8 @@ graph LR
   T12 --> T17
   T11 & T16 --> T18
   T11 & T12 & T15 & T16 & T17 & T18 --> T13
-  T13 --> T14
+  T13 --> T19
+  T13 & T19 --> T14
 ```
 
 ---
@@ -57,8 +58,9 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T16 | docs/plan stays home; null scripts keep install | 4 | Adoption | Merged | `71dddaf` |
 | T17 | **Security:** scan repos under build/vendor dirs | 5 | Scan | Merged | `6f9a0e3` |
 | T18 | Last survey-first messages | 5 | Workflow | Merged | `cf1e185` |
-| T13 | QA end to end | 6 | QA | Not started | |
-| T14 | Release prep | 7 | Release | Not started | |
+| T13 | QA end to end | 6 | QA | Merged | `3dc8f55` |
+| T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Not started | |
+| T14 | Release prep | 8 | Release | Not started | |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
 was adopted. Waves 0-3 ran on per-task file lists.
@@ -70,15 +72,22 @@ was adopted. Waves 0-3 ran on per-task file lists.
 After T13 reports. **Go** only if all of these hold:
 
 - `check.py` and all four suites green on `main`;
-- T13's JLGC adopt -> undo round trip is byte-identical;
+- T13's JLGC adopt -> undo round trip leaves the working tree byte-identical and
+  `git status --short --ignored` empty (`.git/index` stat data may differ);
 - the card T13 writes through the interview passes `check.py`;
 - no open security finding;
 - every known issue below has been read and accepted.
 
+**2026-10-05 - no-go, one fix.** T13: 7 passed, 1 failed, 2 could not verify.
+Failed: the round trip after `scan.py` leaves `.secrets-baseline` (F1), and the
+printed undo command fails as printed (F2). Both are the rollback path, so
+**T19** fixes them before T14. The interviewed card passed `check.py`; no
+security finding (T17 check passed). Go is re-decided when T19 merges.
+
 ## Cut line
 
-**Must ship:** T13, T14. Merged: T11, T12, T16, **T17 (security)**, T18.
-**May be cut to hold a date:** nothing left - only T13 and T14 remain, and both gate the tag.
+**Must ship:** T19 (rollback path), T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18.
+**May be cut to hold a date:** nothing left - both remaining tasks gate the tag.
 Security fixes are never cut to hold a date.
 
 ---
@@ -91,7 +100,7 @@ Security fixes are never cut to hold a date.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 17 empty worktree
+- [ ] Archive the finished task sessions in the app - their 18 empty worktree
       folders under `.claude/worktrees/` stay locked until you do.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
@@ -123,6 +132,10 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | No test covers `new_card.py`'s message for a `survey: false` area | T11 |
 | `usage.py:265` says promote with a full survey but names `new_card.py`, which only starts a card; promotion is the `survey-area` skill (lead brief wording) | T18 |
 | `init.py:807` step 4 of "Next" is ~95 columns, wider than steps 1-3 (~80) | T18 |
+| Detected `test: pytest` is wrong when tests sit in a nested dir that imports top-level modules (JLGC: run from `backend/`); still flagged DETECTED, NOT VERIFIED | T13 F3 |
+| C2 reference check counts the scaffold's own `scripts/` as project code, so a Do-not-read entry such as `__pycache__/` warns (`check.py:432`, `_lib.py:580`) | T13 F4 |
+| Clone into a deep folder on Windows fails `Filename too long` (longest path 78 chars; `core.longpaths` unset) - tester note in T14 | T13 F5 |
+| Adopt prompts run together on one line when stdin is not a TTY (`init.py:664-665`) | T13 F6 |
 | `scan.py` here runs the regex fallback only - no gitleaks/trufflehog on PATH, so history is unscanned (it warns) | T17 |
 
 ---
@@ -132,6 +145,16 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 Newest first. Lead only.
 
 **2026-10-05**
+
+- **T13 merged** `3dc8f55` after the user's review: 7 passed, 1 failed, 2 could
+  not verify. One escalation: `JLGC - Copy` did not exist (lead brief error) -
+  answered with `git clone --no-hardlinks` of the live JLGC's HEAD `af69375`,
+  origin removed. Lead verified the hash listings, F2 and F4 against source.
+  **Redacted by the user's call:** the interviewed JLGC card is replaced by its
+  hash and claim counts; the unredacted commit was never pushed or merged.
+  **Go/no-go: no-go, one fix** - T19 for F1 and F2. F3-F6 to known issues;
+  F5 also to T14 as a tester note. Round-trip criterion reworded for
+  `.git/index`. Lane table extended to wave 8; T14 moves to wave 8.
 
 - **Wave 5 merged** `--no-ff` after the user's review: T17 `6f9a0e3` (security),
   T18 `cf1e185`. Integrated run first: check 0, invariants 51/51, hooks 26/26,
