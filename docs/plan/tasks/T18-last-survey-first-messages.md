@@ -84,17 +84,51 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T18-last-survey-first-messages` - the single `docs(T18)`
+commit on it (`git log main..task/T18-last-survey-first-messages`)
 
 **What changed**
 
+- `scripts/init.py:807` - step 4 of fresh-init "Next" now reads
+  `- start a partial card; full survey at the area's third task`, wording as given.
+- `scripts/_adopt.py:417-419` - generated `project.yaml` header: "correct the
+  areas." then `survey: true` marks a card complete and maintained, set after a
+  full survey, which happens at an area's third task (ADR 0004).
+- `.claude/README.md:29` - `survey-area` row, wording as given.
+- `scripts/usage.py:265` - re-read advice, wording as given.
+- Strings only. No logic touched, no tests added. CRLF line endings preserved.
+
 **How it was verified**
+
+- Baseline before any change: `check.py` exit 0.
+- No test asserts on any of the four strings: grep over `tests/` for them and
+  their neighbouring header lines found only an unrelated `new_card.py <area>`
+  table fixture (`tests/invariants.py:443`).
+- `grep -rn "then survey it\|ready to write its card\|Survey the areas" scripts .claude`
+  finds nothing (exit 1).
+- `python scripts/check.py` exit 0; `tests/adopt.py` 32/32; `tests/invariants.py` 51/51.
+- `usage.py --all`: the advice is item 3 of the advice list (past the first 40
+  lines) and renders as "... a card would have replaced. Promote those areas'
+  cards with a full survey (ADR 0004): python scripts/new_card.py <area>".
 
 **Deviations** (escalations raised, and the answers)
 
+- None escalated. The `_adopt.py` header comment grew from 2 lines to 3 to hold
+  the required sentence at the existing ~70-column width; the brief allowed the
+  sentence to span the line before.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- `scripts/init.py:807` - the brief's wording makes step 4 about 95 characters,
+  wider than steps 1-3 (~80). Shorten it later if the width matters.
+- `scripts/usage.py:265` - "Promote ... with a full survey" points at
+  `new_card.py <area>`, which starts a card; promotion is the `survey-area`
+  skill. Consider naming the skill instead.
+
 **Rollback**
+
+`git revert <T18 commit>` (or the merge commit, with `-m 1`). Strings only - no
+data, schema or generated-file migration to undo.
 
 ---
 

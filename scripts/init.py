@@ -804,7 +804,7 @@ def main() -> int:
         "    1. edit project.yaml       - declare your areas and commands\n"
         "    2. edit RUNBOOK.md         - how to build, test and run this\n"
         "    3. python scripts/scan.py  - the secret gate, before an agent reads anything\n"
-        "    4. python scripts/new_card.py <area>   - then survey it\n"
+        "    4. python scripts/new_card.py <area>   - start a partial card; full survey at the area's third task\n"
         "\n  Lost? Read START-HERE.md.\n"
     )
     lib.info("  Validating the result...\n")

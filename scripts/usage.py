@@ -262,7 +262,7 @@ def section_rereads(tel: tx.Telemetry, top: int, project) -> "list[str]":
             if known
             else ""
         )
-        + ". Survey the areas they belong to: python scripts/new_card.py <area>"
+        + ". Promote those areas' cards with a full survey (ADR 0004): python scripts/new_card.py <area>"
     ]
     return advice
 
