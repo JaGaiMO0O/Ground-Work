@@ -59,7 +59,7 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T17 | **Security:** scan repos under build/vendor dirs | 5 | Scan | Merged | `6f9a0e3` |
 | T18 | Last survey-first messages | 5 | Workflow | Merged | `cf1e185` |
 | T13 | QA end to end | 6 | QA | Merged | `3dc8f55` |
-| T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Not started | |
+| T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Merged | `303655e` |
 | T14 | Release prep | 8 | Release | Not started | |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
@@ -84,10 +84,16 @@ printed undo command fails as printed (F2). Both are the rollback path, so
 **T19** fixes them before T14. The interviewed card passed `check.py`; no
 security finding (T17 check passed). Go is re-decided when T19 merges.
 
+**2026-10-05 - GO.** T19 merged. Every condition holds: all five suites green on
+`main`; the lead re-ran T13's JLGC round trip by hand (adopt, `scan.py`, the
+printed undo) with `git status --short --ignored` empty; the interviewed card
+passed; no open security finding. Known issues are routed (F3-F6, 2026-10-05);
+the user accepts them with the tag go-ahead. Next: T14, then the tag.
+
 ## Cut line
 
-**Must ship:** T19 (rollback path), T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18.
-**May be cut to hold a date:** nothing left - both remaining tasks gate the tag.
+**Must ship:** T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18, T19.
+**May be cut to hold a date:** nothing left - T14 gates the tag.
 Security fixes are never cut to hold a date.
 
 ---
@@ -100,7 +106,7 @@ Security fixes are never cut to hold a date.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 18 empty worktree
+- [ ] Archive the finished task sessions in the app - their 19 empty worktree
       folders under `.claude/worktrees/` stay locked until you do.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
@@ -145,6 +151,12 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 Newest first. Lead only.
 
 **2026-10-05**
+
+- **T19 merged** `303655e` after the user's review. Integrated run: check 0,
+  invariants 51/51, hooks 26/26, adopt 35/35, scan 8/8, `scan.py` exit 0. The
+  three new cases failed before the fix. Lead hand check on a fresh JLGC clone
+  in a spaced folder: the printed undo ran as pasted, tree clean. No
+  escalations, no follow-ups. **Go/no-go: GO.** Next: wave 8, T14.
 
 - **T13 merged** `3dc8f55` after the user's review: 7 passed, 1 failed, 2 could
   not verify. One escalation: `JLGC - Copy` did not exist (lead brief error) -
