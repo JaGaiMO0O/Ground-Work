@@ -80,17 +80,42 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T17-scan-repos-under-build-dirs` - the single `fix(T17)` commit on it.
 
 **What changed**
 
+- `scripts/scan.py` `iter_files()`: `SKIP_DIRS` is tested against
+  `path.relative_to(root).parts`, not `path.parts`. One line; nothing else in the
+  function, and no change to `SKIP_DIRS`, `SKIP_NAMES`, rules or the gitleaks path.
+- `tests/scan.py`: two cases from the brief's table. A case may now carry an
+  optional `(scan root, file)` pair; `rules_for()` takes them with defaults
+  `"."` and `"case.py"`, so the six existing cases build the same files and
+  assert exactly as before.
+
 **How it was verified**
+
+- Baseline before any change: scan suite 6/6, `scripts/scan.py` exit 0,
+  `scripts/check.py` exit 0.
+- Tests first, before the fix: **7/8** - `repo under a build folder` FAILED,
+  `got: nothing` (the bug reproduced); `build folder inside repo skipped` ok.
+- After the fix: `python tests/scan.py` **8/8**; `python scripts/scan.py` exit 0
+  (`no new findings (2 known, regex-fallback, history=False)`);
+  `python scripts/check.py` exit 0.
 
 **Deviations** (escalations raised, and the answers)
 
+None. No escalations.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- None in code. Note: gitleaks/trufflehog are not on PATH in this environment, so
+  `scripts/scan.py` ran the regex fallback only; history was not scanned.
+
 **Rollback**
+
+`git revert <T17 commit>` on `main`. Safe to revert mechanically (two files, no
+data or config), but it reopens the hole: a repo under any `build/`, `vendor/`,
+`dist/`, `target/`, `venv/`... folder is again silently reported clean.
 
 ---
 
