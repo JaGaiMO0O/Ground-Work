@@ -95,17 +95,55 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T19-undo-leaves-nothing` - see `git log main..task/T19-undo-leaves-nothing`
 
 **What changed**
 
+- `scripts/init.py` "If you want out" block (`:444`): prints
+  `python scripts/init.py --undo "<resolved target>"` - absolute, double-quoted.
+- `scripts/init.py` `undo()` (`:552-572`, report `:610-613`): after the manifest
+  files, checks `.secrets-baseline` and `.secrets-baseline.raw.json` at the
+  target root. Untracked (or no git): removed (not under `--dry-run`), reported
+  `removed <name> - written by scan.py, never committed` (`would remove` on a
+  dry run). Tracked per `git ls-files --error-unmatch`: kept, warned
+  `kept <name> - it is committed; git rm it if you are backing out`. If the
+  unlink itself fails, it is kept and warned `kept <name> - it could not be
+  removed` rather than mislabelled as committed. These files do not affect
+  whether the manifest is kept - that still depends only on manifest files.
+- `tests/adopt.py`: three cases (`undo_after_scan_is_exact`, `printed_undo_runs`,
+  `undo_keeps_committed_baseline`), plus helpers `run_scan` and fixture
+  `build_spaced` (folder `case-NN - Copy`, so the printed command is tested
+  with a space in the path, as `JLGC - Copy` had). `undo_after_scan_is_exact`
+  scans, then delegates to the unchanged `undo_is_exact`. The printed-command
+  case takes the `--undo` line from adoption's output, swaps the leading
+  `python` for the running interpreter, and runs it through the shell with the
+  template (this repo) as cwd. No existing case or assertion was changed.
+
 **How it was verified**
+
+- Before the fix, all three new cases failed: `left behind: ['.secrets-baseline']`;
+  `printed undo exited 2` (argparse usage error - the bare, unquoted name);
+  `kept .secrets-baseline without saying so`.
+- After: `tests/adopt.py` 35/35, `tests/invariants.py` 51/51, `tests/hooks.py`
+  26/26, `tests/scan.py` 8/8, `scripts/check.py` exit 0.
+- By hand: a local git repo cloned into `toy - Copy`, adopted from the template,
+  `python scripts/scan.py` in the clone (wrote `.secrets-baseline`), then the
+  printed undo line run verbatim from the template folder: exit 0,
+  `removed .secrets-baseline - written by scan.py, never committed`, and
+  `git status --short --ignored` in the clone was empty.
 
 **Deviations** (escalations raised, and the answers)
 
+- None. No escalation.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- None found.
+
 **Rollback**
+
+- `git revert <this commit>`: restores the bare-name undo line and the old
+  `undo()`; removes the three test cases. No data, manifest or format change.
 
 ---
 
