@@ -190,6 +190,17 @@ def build_with_gitignore(i):
     return make(i, use_git=True, extra={".gitignore": "*.pyc\n"})
 
 
+def build_spaced(i):
+    """A folder name with a space, as `JLGC - Copy` had. The printed undo
+    command has to survive being pasted for one of these."""
+    target = make(i, use_git=True)
+    spaced = target.with_name(target.name + " - Copy")
+    nuke(spaced)
+    target.rename(spaced)
+    SNAPSHOTS[str(spaced)] = paths_of(spaced)
+    return spaced
+
+
 # Detection fixtures. The JLGC project had 84 tests and got a TODO in its
 # RUNBOOK, because detect() never looked where its tests actually were.
 
@@ -470,6 +481,73 @@ def undo_is_exact(target, before, after, _out):
     return ""
 
 
+def run_scan(target: Path):
+    """Step 4 of adoption's own Next list. It writes .secrets-baseline at the
+    target root, a file the manifest never heard of."""
+    return subprocess.run(
+        [sys.executable, str(target / "scripts" / "scan.py")],
+        cwd=str(target), capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
+    )
+
+
+def undo_after_scan_is_exact(target, before, after, out):
+    """T13 F1: adopt, scan, undo left .secrets-baseline behind. Same pass
+    condition as undo_is_exact, with the user's first step in between."""
+    scan = run_scan(target)
+    if scan.returncode != 0:
+        return "scan.py exited %d" % scan.returncode
+    if not (target / ".secrets-baseline").is_file():
+        return "fixture drift: scan.py no longer writes .secrets-baseline"
+    return undo_is_exact(target, before, after, out)
+
+
+def printed_undo_runs(target, _before, _after, out):
+    """T13 F2: the undo line adoption prints named a bare folder, which only
+    resolves if you happen to stand in its parent. Run it as printed, from the
+    template, the folder the user ran adoption from."""
+    printed = [l.strip() for l in out.splitlines() if "--undo" in l]
+    if not printed:
+        return "no undo command was printed"
+    command = printed[0]
+    if not command.startswith("python "):
+        return "printed undo does not start with python: %r" % command
+    shell = subprocess.list2cmdline([sys.executable]) + command[len("python"):]
+    result = subprocess.run(shell, shell=True, cwd=str(REPO),
+                            capture_output=True, text=True,
+                            stdin=subprocess.DEVNULL)
+    if result.returncode != 0:
+        return "printed undo exited %d: %s" % (
+            result.returncode, (result.stdout + result.stderr).strip()[:120])
+    now = paths_of(target)
+    expected = SNAPSHOTS[str(target)]
+    if now != expected:
+        return "left behind: %s" % sorted(now ^ expected)[:3]
+    return ""
+
+
+def undo_keeps_committed_baseline(target, _before, _after, _out):
+    """Positive control on F1: once the baseline is committed it is the
+    project's record, and git rm is the user's call, not ours."""
+    scan = run_scan(target)
+    if scan.returncode != 0:
+        return "scan.py exited %d" % scan.returncode
+    added = git(target, "add", ".secrets-baseline")
+    if added.returncode != 0:
+        return "git add .secrets-baseline failed: %s" % added.stderr.strip()
+    committed = git(target, "commit", "-qm", "baseline")
+    if committed.returncode != 0:
+        return "commit failed: %s" % committed.stderr.strip()
+    result = run_init(target, "--undo", str(target))
+    if result.returncode != 0:
+        return "undo exited %d" % result.returncode
+    if not (target / ".secrets-baseline").is_file():
+        return "removed a committed .secrets-baseline"
+    if "kept .secrets-baseline" not in result.stdout + result.stderr:
+        return "kept .secrets-baseline without saying so"
+    return ""
+
+
 def undo_keeps_edited_files(target, _before, _after, _out):
     """Once you have edited a file adoption wrote, it is your file."""
     mine = target / "AGENTS.md"
@@ -689,6 +767,9 @@ CASES = [
     ("undo restores exactly     [+]",   build_undo_target, FILLED,                               0, undo_is_exact),
     ("undo keeps edited files   [+]",   build_git,        FILLED,                                0, undo_keeps_edited_files),
     ("undo refuses with no record",     build_git,        ["--help"],                            0, undo_refuses_without_manifest),
+    ("undo after scan restores exactly", build_undo_target, FILLED,                              0, undo_after_scan_is_exact),
+    ("printed undo command runs",       build_spaced,     FILLED,                                0, printed_undo_runs),
+    ("committed baseline is kept [+]",  build_git,        FILLED,                                0, undo_keeps_committed_baseline),
     # adopting from a copy that has already run init.py
     ("second-gen keeps target purpose", build_git,        ["--help"],                            0, second_gen_keeps_target_purpose),
     ("second-gen, nothing given",       build_git,        ["--help"],                            0, second_gen_nothing_given),

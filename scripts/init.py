@@ -441,7 +441,7 @@ def adopt(args, profile: str) -> int:
     # git what it thinks is disposable.
     lines = [
         "\n  If you want out:",
-        f"       python scripts/init.py --undo {target.name}",
+        f'       python scripts/init.py --undo "{target}"',
         f"  It reads {manifest.name} and removes exactly what this run wrote,",
         "  keeping anything you have edited since and saying which.",
     ]
@@ -549,6 +549,28 @@ def undo(args) -> int:
                 continue
         removed.append(rel)
 
+    # scan.py is step 4 of adoption's own Next list, and it writes these at the
+    # root. Not in the manifest, so the loop above never saw them. Uncommitted,
+    # they are ours to clear; committed, they are the project's record.
+    tracked = lib.is_git_repo(target)
+    baselines_removed, baselines_kept = [], []
+    for name in (".secrets-baseline", ".secrets-baseline.raw.json"):
+        path = target / name
+        if not path.is_file():
+            continue
+        if tracked and lib.git("ls-files", "--error-unmatch", name,
+                               cwd=target).returncode == 0:
+            baselines_kept.append((name, "it is committed; git rm it if you"
+                                         " are backing out"))
+            continue
+        if not args.dry_run:
+            try:
+                path.unlink()
+            except OSError:
+                baselines_kept.append((name, "it could not be removed"))
+                continue
+        baselines_removed.append(name)
+
     # Deepest first, or a parent is never empty when its turn comes.
     pruned = []
     for rel in sorted(data.get("dirs_created") or [],
@@ -585,6 +607,10 @@ def undo(args) -> int:
             lib.info(f"       {rel}")
         lib.info("       Delete them yourself if you meant to. This will not "
                  "throw away your work.")
+    for name in baselines_removed:
+        lib.ok(f"{verb} {name} - written by scan.py, never committed")
+    for name, why in baselines_kept:
+        lib.warn(f"kept {name} - {why}")
 
     if args.dry_run:
         lib.info("\n  dry run - nothing was removed\n")
