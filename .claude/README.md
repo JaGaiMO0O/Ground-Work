@@ -26,7 +26,7 @@ written there is discarded by the next `sync.py`.
 
 | Skill | Does |
 |---|---|
-| `survey-area` | Survey one area and write its card: dedicated session, delegate the wide reading, output only the card, then stop |
+| `survey-area` | Full survey of one area, at its third task: asks a human first, delegates the wide reading, outputs only the card |
 | `trace-field` | Trace a value end to end in the right load order |
 | `handoff` | Write the dated session handoff |
 | `check` | Run the validator and explain what each failure means |
