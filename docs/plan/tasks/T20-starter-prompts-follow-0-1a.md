@@ -117,17 +117,54 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T20-starter-prompts-follow-0-1a`, the single commit
+`docs(T20): align starter prompts with 0.1A` on top of `2bc9f4d`.
 
 **What changed**
 
+`docs/starter-prompt.md`, inside the two `text` blocks only:
+
+- Prompt 1: the `map/<area>/CARD.md` bullet replaced with the brief's wording
+  (none at setup; grow from tasks; survey at the third task after asking).
+- Prompt 1, *Hold to these*: the citation bullet and the "what not to read"
+  bullet added after "Derive rather than describe".
+- Prompt 1: `2000 per card` -> `2500 per card`.
+- Prompt 1, *Do not*: `card a file nobody will read twice` -> `survey an area
+  before its third task`. The paragraph was re-wrapped to stay under 80
+  columns ("workflow" moved to the last line).
+- Prompt 2, `## Working with agents`: the citation-habit bullet added after
+  "Say what you could not determine...".
+
 **How it was verified**
+
+- `grep -n "2000 per card\|one card per part\|card a file nobody"` finds nothing.
+- `grep -n "third task\|(unverified)\|2500 per card\|cite the file and line"`
+  hits lines 45, 61, 66, 72 (Prompt 1 block, lines 24-77) and line 159
+  (Prompt 2 block, lines 126-164).
+- `git diff -U0` hunks: 43-48, 60-64, 66, 72-73, 159-161, all inside those
+  two blocks. No new line over 80 columns; the only ones in the file are the
+  table at 115-116, which were already there.
+- `python scripts/check.py`: exit 0, "all invariants hold".
+- `python tests/invariants.py`: 51/51 passed.
+- Checked the wording against `docs/playbook.md:146-167` and ADR 0004: no conflict.
 
 **Deviations** (escalations raised, and the answers)
 
+None. The re-wrap of the *Do not* paragraph is a line-break change only,
+needed to keep the brief's ~80-column width.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- `docs/starter-prompt.md:72`: "Do not: ... survey an area before its third
+  task" leaves out ADR 0004 rule 2's "or on request"
+  (`docs/decisions/0004-task-driven-cards.md:41`). This prompt speaks for the
+  user, so they can still ask for a survey, and it is not a conflict. The lead
+  may want "unless I ask" added.
+
 **Rollback**
+
+`git revert <T20 commit>`. It is prose only: no script, test or other file
+depends on it.
 
 ---
 

@@ -40,9 +40,12 @@ Then create only these:
 - RUNBOOK.md - the one place saying how to build, test and run this. Real
   commands, versions pinned. If you detect them from a manifest, say so and
   mark them unverified.
-- map/<area>/CARD.md - one card per part of the codebase, and only for parts
-  that will be read more than twice. Each card: what it owns, its interfaces,
-  its landmines, and what not to read.
+- map/<area>/CARD.md - none at setup. Cards grow from work: when a task
+  teaches you a landmine, add it to that area's card, starting a partial
+  card if there is none. When an area is worked in its third task, survey
+  it fully - but first ask me, in one message, the questions only a human
+  can answer, and wait. A card holds: what the area owns, its interfaces,
+  its landmines, what not to read and why, and open questions.
 - context/handoffs/ - a dated note at the end of any session that continues:
   goal, what got done, what is open, and the gotcha that cost an hour.
 - docs/decisions/ - one file per non-obvious decision: context, decision,
@@ -54,15 +57,20 @@ Hold to these:
 - Derive rather than describe. Anything git, the filesystem, or a test run
   already knows should be generated, not typed. A regenerated file cannot go
   stale.
+- Every claim on a card cites the line that proves it (path:line), or my
+  answer (per NAME, DATE), or is marked (unverified). A card says where to
+  look, not what is true: open the cited line before stating it as fact.
+- Each "what not to read" entry says how you know it is dead, and the list
+  never applies when diagnosing a bug or a slowdown.
 - Budget the always-loaded file and enforce it in a script - say 1500 tokens
-  for AGENTS.md, 2000 per card. An unchecked budget is a suggestion.
+  for AGENTS.md, 2500 per card. An unchecked budget is a suggestion.
 - Anything a tool claims about my environment must be asked of my environment
   at runtime, never assumed when the tool was written.
 - Refuse rather than warn where there is no undo.
 
 Do not: document what you can derive, invent an area map before there is code
-in it, card a file nobody will read twice, or create scaffolding for a workflow
-I do not have yet.
+in it, survey an area before its third task, or create scaffolding for a
+workflow I do not have yet.
 
 When you are done, tell me what you could not determine rather than filling it
 in with something plausible.
@@ -148,6 +156,9 @@ otherwise - the project always wins.
   the paths actually are, what the tests actually assert.
 - Say what you could not determine, rather than filling it in with something
   plausible.
+- When you write down how something works, cite the file and line it came
+  from, or mark it unverified. Ask a person for what the code cannot tell
+  you.
 - Where there is no undo, ask first.
 - In a repository that is not mine, propose files rather than creating them.
 ```
