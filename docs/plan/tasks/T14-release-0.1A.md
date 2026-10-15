@@ -1,7 +1,7 @@
 # T14 - Prepare the build-0.1A release
 
-Wave: 8
-Depends on: T13, T19
+Wave: 9
+Depends on: T13, T19, T20
 Lane: Release
 Estimate: S (~30 min)
 Build: build-0.1A
@@ -55,7 +55,7 @@ has to be cheap to produce: two command runs, no writing.
    and the blockers' text unchanged. Run `python scripts/status.py`.
 4. **Handoff**: `python scripts/handoff.py "build 0.1A release"`, then fill it in:
    - *Goal*: release 0.1A.
-   - *Done*: one line per task T00-T19 with its commit hash (from `git log`);
+   - *Done*: one line per task T00-T20 with its commit hash (from `git log`);
      T13's summary line.
    - *Open*: T13's follow-ups F3-F6 (F1 and F2 are fixed by T19); the deferred list -
      `--update`; `.ps1` adapters on macOS; `CLAUDE_CONFIG_DIR`; nested `.csproj`;

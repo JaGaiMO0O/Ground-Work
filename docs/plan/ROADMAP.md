@@ -30,7 +30,8 @@ graph LR
   T11 & T16 --> T18
   T11 & T12 & T15 & T16 & T17 & T18 --> T13
   T13 --> T19
-  T13 & T19 --> T14
+  T11 & T18 --> T20
+  T13 & T19 & T20 --> T14
 ```
 
 ---
@@ -60,7 +61,8 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T18 | Last survey-first messages | 5 | Workflow | Merged | `cf1e185` |
 | T13 | QA end to end | 6 | QA | Merged | `3dc8f55` |
 | T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Merged | `303655e` |
-| T14 | Release prep | 8 | Release | Not started | |
+| T20 | Starter prompts follow 0.1A's card rules | 8 | Workflow | Not started | |
+| T14 | Release prep | 9 | Release | Not started | |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
 was adopted. Waves 0-3 ran on per-task file lists.
@@ -92,8 +94,9 @@ the user accepts them with the tag go-ahead. Next: T14, then the tag.
 
 ## Cut line
 
-**Must ship:** T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18, T19.
-**May be cut to hold a date:** nothing left - T14 gates the tag.
+**Must ship:** T20, T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18, T19.
+**May be cut to hold a date:** nothing left. T20 is small, and without it the
+starter prompt contradicts ADR 0004 for anyone who skips adoption.
 Security fixes are never cut to hold a date.
 
 ---
@@ -149,6 +152,14 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 ## Status log
 
 Newest first. Lead only.
+
+**2026-10-15**
+
+- **T20 added** on the user's question: `docs/starter-prompt.md` sat in no lane
+  in waves 4-7, so both prompts still taught 0A rules (cards at setup, no
+  citations, no interview, budget 2000). Lead planning miss. Workflow lane,
+  wave 8; T14 moves to wave 9 and depends on T20. T14 had not started; its
+  chip was withdrawn and is re-posted after T20 merges.
 
 **2026-10-05**
 
