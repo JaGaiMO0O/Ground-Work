@@ -61,7 +61,7 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T18 | Last survey-first messages | 5 | Workflow | Merged | `cf1e185` |
 | T13 | QA end to end | 6 | QA | Merged | `3dc8f55` |
 | T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Merged | `303655e` |
-| T20 | Starter prompts follow 0.1A's card rules | 8 | Workflow | Not started | |
+| T20 | Starter prompts follow 0.1A's card rules | 8 | Workflow | Merged | `0a495ac` |
 | T14 | Release prep | 9 | Release | Not started | |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
@@ -94,9 +94,8 @@ the user accepts them with the tag go-ahead. Next: T14, then the tag.
 
 ## Cut line
 
-**Must ship:** T20, T14. Merged: T11, T12, T13, T16, **T17 (security)**, T18, T19.
-**May be cut to hold a date:** nothing left. T20 is small, and without it the
-starter prompt contradicts ADR 0004 for anyone who skips adoption.
+**Must ship:** T14. Merged: T20, T11, T12, T13, T16, **T17 (security)**, T18, T19.
+**May be cut to hold a date:** nothing left - T14 gates the tag.
 Security fixes are never cut to hold a date.
 
 ---
@@ -109,7 +108,7 @@ Security fixes are never cut to hold a date.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 19 empty worktree
+- [ ] Archive the finished task sessions in the app - their 20 empty worktree
       folders under `.claude/worktrees/` stay locked until you do.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
@@ -145,6 +144,7 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | C2 reference check counts the scaffold's own `scripts/` as project code, so a Do-not-read entry such as `__pycache__/` warns (`check.py:432`, `_lib.py:580`) | T13 F4 |
 | Clone into a deep folder on Windows fails `Filename too long` (longest path 78 chars; `core.longpaths` unset) - tester note in T14 | T13 F5 |
 | Adopt prompts run together on one line when stdin is not a TTY (`init.py:664-665`) | T13 F6 |
+| Starter prompt 1's "survey an area before its third task" omits ADR 0004's "or on request" (`docs/starter-prompt.md:72`); candidate wording "unless I ask" | T20 |
 | `scan.py` here runs the regex fallback only - no gitleaks/trufflehog on PATH, so history is unscanned (it warns) | T17 |
 
 ---
@@ -152,6 +152,13 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 ## Status log
 
 Newest first. Lead only.
+
+**2026-10-26**
+
+- **T20 merged** `0a495ac` after the user's review. Integrated run: check 0,
+  invariants 51/51, hooks 26/26, adopt 35/35, scan 8/8, `scan.py` exit 0. Diff
+  only inside the two prompt blocks, wording verbatim. One follow-up to known
+  issues. Next: wave 9, T14 (chip re-posted).
 
 **2026-10-15**
 
