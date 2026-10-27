@@ -108,8 +108,8 @@ Security fixes are never cut to hold a date.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 21 empty worktree
-      folders under `.claude/worktrees/` stay locked until you do.
+- [x] Archive the finished task sessions - T00-T20 archived 2026-10-27; all 21
+      worktree folders released and removed.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
 
