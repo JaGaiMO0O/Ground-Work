@@ -111,17 +111,47 @@ No `Co-Authored-By` trailer. Stage only the files you own. Never push.
 
 <!-- Task session fills this in. Status lives in docs/plan/ROADMAP.md, lead-only. -->
 
-Branch / commit:
+Branch / commit: `task/T14-release-0.1A` - this commit, `docs(T14): prepare build-0.1A release`, on `9011466`.
+
+**Tag - not created.** After merging, and only on the user's go-ahead, the lead runs on `main`:
+
+```bash
+git tag -a build-0.1A -m "Build 0.1A - version 0.1, alpha"
+```
 
 **What changed**
 
+- `TESTING.md`: Track D is now the measurement. Testers run `usage.py --path <project>` into `usage-before.txt` on the day they adopt, and into `usage-after.txt` two weeks later, then post both. The section says why (the premise is unmeasured, and a missing "after" leaves it open), warns against `--all` (it lists every project, with paths), and says to read both files before posting. Before Track A: the Windows short-path / `core.longpaths` tester note (T13 F5). Tracks A-C are unchanged.
+- `RUNBOOK.md`, *Open defects*: the `scan.py` `*_TOKEN` entry is removed (T12). The test-detection entry is replaced by T13 F3. T13 F4 is added. The lead-in now points at T13's Follow-ups. The "Neither risks data" evidence now includes T13's round trip and T19's undo-after-scan case. That leaves two entries.
+- `RUNBOOK.md`, *Known rough edges*: `build-0A` cards fail `check.py` (add citations or mark `(unverified)`; there is no `--update` yet), and adopt prompts run together without a TTY (T13 F6).
+- `STATUS.md`: Now is `build-0.1A ready for a small rollout.` Next is the original tester's re-run of tasks 1 and 4, plus the before/after `usage.py` files. `reviewed: 2026-10-27`. Done means and the blockers are unchanged. The generated zone was refreshed by `status.py`.
+- `context/handoffs/2026-10-27-build-0-1a-release.md`: new, made with `handoff.py`. It lists T00-T20 with merge hashes, and covers T13's result, F3-F6, the deferred list, the Gotcha and Next.
+
 **How it was verified**
+
+- `python scripts/check.py`: exit 0, `all invariants hold`.
+- `python scripts/status.py --check`: up to date.
+- `grep -n "usage.py --path" TESTING.md`: both hits are in Track D.
+- `git tag -l "build-0.1A"`: empty.
+- Every hash in the handoff's Done list was checked twice: against ROADMAP's task table, and with `git log --oneline --first-parent main`. All 20 are present.
+- The new RUNBOOK evidence claim (undo exact after `scan.py`) was checked against `tests/adopt.py:494` (`undo_after_scan_is_exact`).
+- TESTING.md:48 ("Two defects") and :247 ("The two entries") still read true with two entries. Track B's "see the known defect first" (TESTING.md:191-192) now points at F3. README.md:71 ("two are already known") is still true and was not touched.
 
 **Deviations** (escalations raised, and the answers)
 
+- **ESCALATION T14 (step 2).**
+  - Found: T10 and T12 are Merged, so the brief says to remove both Open defects entries. That would empty the list while TESTING.md:48 and :247 ("two"), Track B's "see the known defect first" (TESTING.md:191-192, which must not change) and README.md:71 (outside Owns) still point at it. T13 F3 is a live defect in the very layout Track B warns about.
+  - Options: 1) empty the list and fix only TESTING.md; 2) replace the entries with F3 and fix the counts.
+  - Answer: **option 2, modified** (the lead, approved by the user). Remove the `*_TOKEN` entry. Replace test detection with F3. Add F4, saying that `check.py` exits 2 on warnings. Point the lead-in at T13's Follow-ups F3 and F4, and drop the 2026-08-16 handoff pointer. Update the "Neither risks data" evidence (T13 round trip; T19 undo after `scan.py`). Two entries remain, so TESTING.md:48 and :247 stay as written, and README is not touched (no follow-up for it). Also add F6 as one line under Known rough edges.
+- The handoff's Gotcha uses T13's step-6 failure line, with "(fixed by T19)" added so a reader does not take it for an open defect.
+
 **Follow-ups** (found, not fixed - file and line)
 
+- None.
+
 **Rollback**
+
+Revert this commit (`git revert <hash>`). It touches only docs: `TESTING.md`, `RUNBOOK.md`, `STATUS.md`, the new handoff and this Handoff. No code or tests change. If the tag was created first, delete it with `git tag -d build-0.1A` before reverting (and from any remote it was pushed to).
 ---
 
 ## Lead review

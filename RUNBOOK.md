@@ -149,26 +149,25 @@ Found, reproduced, and not yet fixed. **Check this list before reporting
 anything** - what is here is known, so your time is better spent on what is
 not. Quote the build (the output of `git describe --tags`) in any report.
 
-Both of these were found by the JLGC adoption trial on 2026-08-16; the full
-write-up, including causes and the files involved, is in
-`context/handoffs/2026-08-16-jlgc-adoption-trial.md` as defects 3 and 6.
+Both of these were found by the 0.1A QA run (T13, 2026-10-05); the full
+write-up, including reproductions and the files involved, is in
+`docs/plan/tasks/T13-qa-end-to-end.md` under Follow-ups, F3 and F4.
 
-- **Adoption misses the test command on some Python layouts.** The adopted
-  `RUNBOOK.md` lands with `# TODO: how do you test this?` even where tests
-  plainly exist. Triggers when a root `requirements.txt` only re-exports another
-  file (`-r backend/requirements.txt`), or when `tests/` sits below the repo
-  root rather than at it. Workaround: fill the command in by hand. It is a
-  detection gap, not a wrong answer.
-- **`scan.py` reports `*_TOKEN` constants as secrets.** Any identifier ending in
-  `token`, `secret` or `key` assigned at the start of a line matches the
-  `password-property` rule, so ordinary Python like
-  `_NUMERIC_TOKEN = re.compile(` is recorded as a finding. Low volume - 1 hit in
-  3,287 files on the trial - and the captured "secret" is visibly not one. Not a
-  reason to distrust a real hit.
+- **Adoption writes the wrong test command when tests sit below the root and
+  import top-level modules.** Detection finds the tests (for example
+  `backend/tests/`) and writes `test: pytest`, which fails when run from the
+  repo root. It is still flagged `DETECTED, NOT VERIFIED`. Workaround: run it
+  from that directory (for example `cd backend && pytest`) and correct
+  `RUNBOOK.md` by hand.
+- **`check.py` warns falsely on some *Do not read* entries.** An entry naming
+  something the scaffold's own scripts also mention, such as `__pycache__/`,
+  warns `referenced from scripts/_lib.py`. It is a false warning, not an error,
+  but `check.py` exits 2 on warnings. Workaround: ignore that one warning.
 
 Neither risks data. Adoption's safety claims are the most-tested part of this:
-three trials with 0 pre-existing files modified, and `tests/adopt.py` asserts
-the undo restores the target byte for byte.
+three trials and T13's round trip with 0 pre-existing files modified, and
+`tests/adopt.py` asserts the undo restores the target byte for byte, including
+after `scan.py` (T19).
 
 Delete an entry from this list when it is fixed, not when it is understood.
 
@@ -189,3 +188,8 @@ Delete an entry from this list when it is fixed, not when it is understood.
   a passed security gate.
 - **The `.sh` adapters need bash.** On Windows that means git-bash. The `.ps1`
   shims cover the Python scripts, not the adapters.
+- **Cards written under `build-0A` now fail `check.py`.** They carry no
+  citations, and 0.1A requires one on every claim. Add a citation to each
+  claim, or mark it `(unverified)`. There is no `--update` path yet.
+- **Adopt prompts run together without a TTY.** With stdin redirected and no
+  `--purpose`/`--done`, both prompts print on one line; pass the two flags.

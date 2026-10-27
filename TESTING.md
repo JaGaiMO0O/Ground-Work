@@ -77,6 +77,16 @@ result. What makes a good one:
   to be reversible and the undo is tested, but you are here to test that
   claim, not to rely on it.
 
+> **On Windows, clone into a short path,** such as `C:\gw`, or run this once
+> first:
+>
+> ```bash
+> git config --global core.longpaths true
+> ```
+>
+> A deep folder (OneDrive, or nested project directories) makes the clone fail
+> with `Filename too long`.
+
 ---
 
 ## Track A - a project from scratch
@@ -211,22 +221,36 @@ you and gives you no way forward, that is a finding.
 
 ---
 
-## Track D - the numbers
+## Track D - the measurement
+
+**This is the evidence the project does not have yet.** Three trials proved
+adoption is safe. None measured whether it makes a session cheaper. Two command
+runs answer that, and you do not have to write anything.
+
+On the day you adopt, **before you start working**, run this from the Ground
+Work folder. Keep the file outside your project:
 
 ```bash
-python scripts/usage.py --all
+python scripts/usage.py --path /path/to/your/project > usage-before.txt
 ```
 
-This reads your local Claude Code session history and reports where context
-went. It is advisory and reads nothing but transcripts.
+Then work normally on that project for **two weeks**. After that, run it again:
 
-Judge one thing: **do the numbers describe your actual experience?** If it
-claims a project cost you very little and you remember burning an afternoon on
-it, that is worth a report - a budget tool that under-reports reads as good
-news, which is the worst way for it to be wrong.
+```bash
+python scripts/usage.py --path /path/to/your/project > usage-after.txt
+```
 
-`no readable session telemetry` on a project you have never used an agent in is
-the correct answer, not a failure.
+**Read both files, then post both in the Teams thread.**
+
+- Use `--path`, **not** `--all`. `--all` lists every project on your machine,
+  with its file paths. `--path` reports on the one project only.
+- Read both files before you post them. They name files from that project.
+- The "after" file matters most. A "before" file with no "after" leaves the
+  question open, so send the second one even if the two weeks were quiet.
+
+`usage.py` reads your local Claude Code session history and nothing else. It
+is advisory. `no readable session telemetry` on a project you have never used
+an agent in is the correct answer, not a failure - post it anyway.
 
 ---
 

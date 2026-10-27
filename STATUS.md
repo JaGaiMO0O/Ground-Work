@@ -1,6 +1,6 @@
 ---
 phase: v1-complete
-reviewed: 2026-10-04
+reviewed: 2026-10-27
 ---
 
 # Status
@@ -19,8 +19,8 @@ Known defects are in `RUNBOOK.md` under *Open defects*.
 
 | | |
 |---|---|
-| **Now** | Build 0.1A in progress - plan and status in `docs/plan/ROADMAP.md`. Then a small rollout, measured with `usage.py --all` before and after. |
-| **Next** | A week of ordinary work on an adopted project, re-measured against its baseline. Three trials proved adoption is safe; none tested whether it helps. |
+| **Now** | build-0.1A ready for a small rollout. |
+| **Next** | The original tester re-runs review tasks 1 and 4. Rollout testers send before/after `usage.py --path` files (TESTING.md, Track D). |
 | **Done means** | Someone who has not used an agent well before runs `init.py`, follows `START-HERE.md` unaided, and their next session is measurably cheaper on `usage.py`. |
 
 ## Blockers
@@ -64,13 +64,13 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-10-04 14:03 UTC
-Branch:       main @ 71dddaf (2026-10-04), 10 uncommitted change(s)
-              "chore(T16): merge task/T16-plan-stays-home-npm-install"
+Generated:    2026-10-27 06:05 UTC
+Branch:       task/T14-release-0.1A @ 9011466 (2026-10-26), 5 uncommitted change(s)
+              "docs(plan): accept T20; ready T14"
 Validation:   clean
-Last handoff: 2026-09-03-build-0a-tester-handover.md
-              Next: 1. Authorize the Atlassian MCP (installed, not yet authorized - OAuth...
+Last handoff: 2026-10-27-build-0-1a-release.md
+              Next: rollout with at least one Mac and one Java/Maven project; the original
 Areas:        4 declared, 0 with a card
-Budget:       cache 97%; peak context 807k; orientation 10%   -> python scripts/usage.py
+Budget:       cache 96%; peak context 120k; orientation 0%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->
