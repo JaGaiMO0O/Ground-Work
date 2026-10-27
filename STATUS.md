@@ -64,13 +64,13 @@ invalidate the prompt cache on every edit.
 
 ## Where things stand
 
-Generated:    2026-10-27 06:05 UTC
-Branch:       task/T14-release-0.1A @ 9011466 (2026-10-26), 5 uncommitted change(s)
-              "docs(plan): accept T20; ready T14"
+Generated:    2026-10-27 06:13 UTC
+Branch:       main @ dbe293d (2026-10-27), 1 uncommitted change(s)
+              "chore(T14): merge task/T14-release-0.1A"
 Validation:   clean
 Last handoff: 2026-10-27-build-0-1a-release.md
               Next: rollout with at least one Mac and one Java/Maven project; the original
 Areas:        4 declared, 0 with a card
-Budget:       cache 96%; peak context 120k; orientation 0%   -> python scripts/usage.py
+Budget:       cache 97%; peak context 811k; orientation 10%   -> python scripts/usage.py
 
 <!-- Everything in this section is derived. Change the project, not this text. -->

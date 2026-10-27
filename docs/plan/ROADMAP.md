@@ -62,7 +62,7 @@ Status: **Not started** · **In review** · **Merged** · **Cut**
 | T13 | QA end to end | 6 | QA | Merged | `3dc8f55` |
 | T19 | Undo leaves nothing behind; printed command works | 7 | Adoption | Merged | `303655e` |
 | T20 | Starter prompts follow 0.1A's card rules | 8 | Workflow | Merged | `0a495ac` |
-| T14 | Release prep | 9 | Release | Not started | |
+| T14 | Release prep | 9 | Release | Merged | `dbe293d` |
 
 Lanes are defined in [PROTOCOL.md](PROTOCOL.md) from wave 4, when this standard
 was adopted. Waves 0-3 ran on per-task file lists.
@@ -103,12 +103,12 @@ Security fixes are never cut to hold a date.
 ## User inputs needed
 
 - [ ] Freeze date.
-- [ ] Go-ahead for the `build-0.1A` tag after T14 (the lead tags `main`).
+- [x] Go-ahead for the `build-0.1A` tag after T14 - given 2026-10-27; known issues accepted with it.
 - [ ] Rollout testers covering **one Mac** and **one Java/Maven repo**.
 - [ ] The original tester re-runs review tasks 1 and 4 (D-12).
 - [ ] Rename the directory with no session open:
       `mv "~/Desktop/Legacy Modernization" "~/Desktop/Ground Work"`.
-- [ ] Archive the finished task sessions in the app - their 20 empty worktree
+- [ ] Archive the finished task sessions in the app - their 21 empty worktree
       folders under `.claude/worktrees/` stay locked until you do.
 - [ ] Optional: Settings -> Claude Code -> worktree location, if you want
       worktrees at `../<repo>-Txx` rather than inside the repo (D-07).
@@ -145,6 +145,7 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 | Clone into a deep folder on Windows fails `Filename too long` (longest path 78 chars; `core.longpaths` unset) - tester note in T14 | T13 F5 |
 | Adopt prompts run together on one line when stdin is not a TTY (`init.py:664-665`) | T13 F6 |
 | Starter prompt 1's "survey an area before its third task" omits ADR 0004's "or on request" (`docs/starter-prompt.md:72`); candidate wording "unless I ask" | T20 |
+| `status.py --check` reports out of date on any committed tree: the generated zone records HEAD and counts `STATUS.md` itself as uncommitted | lead, T14 review |
 | `scan.py` here runs the regex fallback only - no gitleaks/trufflehog on PATH, so history is unscanned (it warns) | T17 |
 
 ---
@@ -152,6 +153,17 @@ Accepted for 0.1A; each is a candidate brief for the next release.
 ## Status log
 
 Newest first. Lead only.
+
+**2026-10-27**
+
+- **T14 merged** `dbe293d` after the user's review. Integrated run: check 0,
+  invariants 51/51, hooks 26/26, adopt 35/35, scan 8/8, `scan.py` exit 0; all 20
+  handoff hashes match. One escalation (Open defects would empty while three
+  docs count "two") - answered: list T13 F3 and F4, F6 to rough edges.
+- **Lead fix:** STATUS.md's generated zone regenerated on `main` (T14 had run
+  it on its branch). `status.py --check` staleness to known issues.
+- **Tagged `build-0.1A`** on `main` on the user's go-ahead, pushed to both
+  remotes. Build 0.1A complete. Next: the original tester's re-test; rollout.
 
 **2026-10-26**
 
