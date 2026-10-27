@@ -164,6 +164,10 @@ Newest first. Lead only.
   it on its branch). `status.py --check` staleness to known issues.
 - **Tagged `build-0.1A`** on `main` on the user's go-ahead, pushed to both
   remotes. Build 0.1A complete. Next: the original tester's re-test; rollout.
+- **Freeze artifact:** `git archive --format=tar --prefix=ground-work-build-0.1A/
+  build-0.1A` (git 2.53.0) -> 931,840 bytes, SHA-256
+  `003dc1e8c26d9f36da8fcdf1795fdc6fe0eb6afea7c563b3be3c2b5b6d64f791`; built twice,
+  identical. Tag object `a3faef0` -> commit `48a0d02`. Any later fix is a new tag.
 
 **2026-10-26**
 
